@@ -1,0 +1,213 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  PENDING_PAYMENT
+  SCHEDULED
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  UPI_OFFLINE
+  BANK_TRANSFER
+  RAZORPAY
+}
+
+enum NotificationStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model Owner {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  phone        String
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  gym          Gym?
+  sessions     Session[]
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  ownerId   String
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  owner     Owner     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  @@index([ownerId, expiresAt])
+}
+
+model Gym {
+  id           String              @id @default(cuid())
+  ownerId      String              @unique
+  name         String
+  address      String
+  phone        String
+  timezone     String              @default("Asia/Kolkata")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  owner        Owner               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members      Member[]
+  plans        MembershipPlan[]
+  memberships  Membership[]
+  payments     Payment[]
+  notifications Notification[]
+  integrations IntegrationSettings?
+  @@unique([id, ownerId])
+}
+
+model Member {
+  id          String       @id @default(cuid())
+  gymId       String
+  name        String
+  phone       String
+  email       String?
+  isArchived  Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  gym         Gym          @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+  payments    Payment[]
+  notifications Notification[]
+  @@unique([id, gymId])
+  @@index([gymId, isArchived, name])
+  @@index([gymId, phone])
+}
+
+model MembershipPlan {
+  id          String       @id @default(cuid())
+  gymId       String
+  name        String
+  durationDays Int
+  pricePaise  Int
+  description String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  gym         Gym          @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+  @@unique([id, gymId])
+  @@unique([gymId, name])
+  @@index([gymId, isActive])
+}
+
+model Membership {
+  id                   String           @id @default(cuid())
+  gymId                String
+  memberId             String
+  planId               String
+  planNameSnapshot     String
+  durationDaysSnapshot Int
+  amountPaise          Int
+  startDate            DateTime         @db.Date
+  expiryDate           DateTime         @db.Date
+  status               MembershipStatus @default(PENDING_PAYMENT)
+  renewedFromId        String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  gym                  Gym              @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  member               Member           @relation(fields: [memberId, gymId], references: [id, gymId], onDelete: Restrict)
+  plan                 MembershipPlan   @relation(fields: [planId, gymId], references: [id, gymId], onDelete: Restrict)
+  renewedFrom          Membership?      @relation("MembershipRenewal", fields: [renewedFromId], references: [id], onDelete: SetNull)
+  renewals             Membership[]     @relation("MembershipRenewal")
+  payments             Payment[]
+  notifications        Notification[]
+  @@unique([id, gymId])
+  @@unique([renewedFromId])
+
+  @@index([gymId, expiryDate, status])
+  @@index([memberId, gymId, createdAt])
+}
+
+model Payment {
+  id                      String        @id @default(cuid())
+  gymId                   String
+  memberId                String
+  membershipId            String
+  amountPaise              Int
+  status                   PaymentStatus @default(PENDING)
+  method                   PaymentMethod
+  razorpayPaymentLinkId    String?       @unique
+  paymentUrl               String?
+  razorpayPaymentId        String?       @unique
+  renewalRequestKey        String?       @unique
+  transactionReference     String?
+  paymentDate              DateTime?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  gym                      Gym           @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  member                   Member        @relation(fields: [memberId, gymId], references: [id, gymId], onDelete: Restrict)
+  membership               Membership    @relation(fields: [membershipId, gymId], references: [id, gymId], onDelete: Restrict)
+  @@unique([id, gymId])
+  @@index([gymId, status, createdAt])
+  @@index([gymId, memberId, createdAt])
+}
+
+model Notification {
+  id                String             @id @default(cuid())
+  gymId             String
+  memberId          String
+  membershipId      String
+  type              String
+  scheduledAt       DateTime
+  sentAt            DateTime?
+  status            NotificationStatus @default(PENDING)
+  providerMessageId String?
+  errorMessage      String?
+  attempts          Int                @default(0)
+  paymentLink       String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  gym               Gym                @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  member            Member             @relation(fields: [memberId, gymId], references: [id, gymId], onDelete: Restrict)
+  membership        Membership         @relation(fields: [membershipId, gymId], references: [id, gymId], onDelete: Restrict)
+  @@unique([membershipId, type])
+  @@index([status, scheduledAt])
+}
+
+model IntegrationSettings {
+  id                        String   @id @default(cuid())
+  gymId                     String   @unique
+  razorpayKeyIdEncrypted    String?
+  razorpaySecretEncrypted   String?
+  razorpayWebhookEncrypted  String?
+  whatsappTokenEncrypted   String?
+  whatsappPhoneNumberId     String?
+  whatsappBusinessAccountId String?
+  whatsappTemplateName      String?
+  whatsappTemplateLanguage  String   @default("en")
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  gym                       Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+}
+
+model WebhookEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  provider    String
+  processedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+

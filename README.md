@@ -78,5 +78,6 @@ The standalone worker checks every minute. It atomically claims due notification
 - Run `npm run db:deploy` as a deployment migration step.
 - Run `npm run db:deploy` only against the intended database; migration URLs should be direct/unpooled on Neon.
 - Run `npm run dev:worker` as a separate always-on worker process in production (or use a reliable scheduled job that invokes the worker).
+- The included Render Blueprint is a free preview: it deploys the web app and a free Postgres database, but omits the background worker. Free Render Postgres expires after 30 days, so use a paid database and deploy the worker before relying on persistent data or automatic renewal reminders.
 - Configure `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `CREDENTIALS_ENCRYPTION_KEY`, `WEB_ORIGIN`, `WHATSAPP_GRAPH_API_VERSION`, and provider credentials through the hosting platform's secret manager.
 - Never commit `.env`, live provider credentials, or production data.

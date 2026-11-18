@@ -7,32 +7,10 @@ projects:
             name: forma-gym-app
             runtime: node
             region: singapore
-            plan: 0.5c-512mb
+            plan: free
             buildCommand: npm ci && npm run db:generate && npm run build
-            preDeployCommand: npm run db:deploy
-            startCommand: npm start
+            startCommand: npm run db:deploy && npm start
             healthCheckPath: /api/health
-            envVars:
-              - key: NODE_ENV
-                value: production
-              - key: DATABASE_URL
-                fromDatabase:
-                  name: forma-gym-db
-                  property: connectionString
-              - key: DATABASE_URL_UNPOOLED
-                fromDatabase:
-                  name: forma-gym-db
-                  property: connectionString
-              - fromGroup: forma-gym-secrets
-
-          - type: worker
-            name: forma-gym-reminders
-            runtime: node
-            region: singapore
-            plan: 0.5c-512mb
-            buildCommand: npm ci && npm run db:generate && npm run build
-            preDeployCommand: npm run db:deploy
-            startCommand: npm run start:worker
             envVars:
               - key: NODE_ENV
                 value: production
@@ -50,7 +28,7 @@ projects:
           - name: forma-gym-db
             databaseName: forma
             region: singapore
-            plan: 0.1c-256mb
+            plan: free
 
         envVarGroups:
           - name: forma-gym-secrets

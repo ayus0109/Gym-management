@@ -76,12 +76,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   return (
     <div className="overview-page">
-      {/* Welcome & Command Header */}
+      {/* Welcome & Overview Header */}
       <div className="overview-header-banner">
         <div className="ohb-content">
-          <h2>Command Center</h2>
+          <h2>Gym Overview</h2>
           <p>
-            Welcome, <strong>{gym.name}</strong>. Here is your daily membership pulse and cash flow.
+            Welcome back, <strong>{gym.name}</strong>. Here is your daily membership status and cash flow.
           </p>
         </div>
         <div className="ohb-actions">

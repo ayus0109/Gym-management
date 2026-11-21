@@ -120,18 +120,18 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
                 <span className="radar-ping" />
                 <span className="radar-core" />
               </span>
-              <span>INTELLIGENT GYM OPERATING SYSTEM</span>
+              <span>MODERN FITNESS WORKSPACE</span>
               <span className="hero-badge-pill">v2.4</span>
             </div>
 
             <h1 className="hero-headline">
-              Engineered for <br />
-              <span className="gradient-text">athletic momentum.</span>
+              Simple member management <br />
+              <span className="gradient-text">for gym owners.</span>
             </h1>
 
             <p className="hero-description">
-              A spatial, high-performance workspace for elite gym owners. Automate renewal reminders over WhatsApp,
-              collect dues with instant Razorpay links, and track every active athlete in real time.
+              Track renewals before they expire, send 1-click WhatsApp reminders with instant UPI QR codes,
+              and collect payments on time — with zero monthly software fees.
             </p>
 
             <div className="hero-actions">
@@ -381,7 +381,7 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
           <div className="trust-quote-card">
             <div className="quote-stars">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} size={16} fill="#d4ff00" color="#d4ff00" />
+                <Star key={i} size={16} fill="#f59e0b" color="#f59e0b" />
               ))}
             </div>
             <blockquote>
@@ -410,7 +410,7 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
             <div className="footer-links">
               <span>© 2026 Forma Technologies Inc.</span>
               <span>•</span>
-              <span>Engineered with Antigravity Motion & Spatial Design</span>
+              <span>Designed for fitness studios and gym owners</span>
             </div>
             <button className="landing-secondary" onClick={() => setPage('login')}>
               Owner Sign In <ArrowUpRight size={14} />

@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
+  ArrowLeft,
   Bell,
   CheckCheck,
+  ChevronRight,
   Clock3,
   CreditCard,
   Dumbbell,
@@ -91,6 +93,7 @@ export function App() {
   const [gym, setGym] = useState<GymDto | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [active, setActive] = useState('Overview')
+  const [navHistory, setNavHistory] = useState<string[]>(['Overview'])
   const [members, setMembers] = useState<MemberView[]>([])
   const [memberDtos, setMemberDtos] = useState<MemberDto[]>([])
   const [plans, setPlans] = useState<PlanDto[]>([])
@@ -139,6 +142,51 @@ export function App() {
     document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'
     localStorage.setItem('forma-theme', darkMode ? 'dark' : 'light')
   }, [darkMode])
+
+  // Browser Navigation & History Handling
+  const navigateTo = (tab: string, pushHistory = true) => {
+    if (tab === active) return
+    if (pushHistory) {
+      setNavHistory(prev => [...prev, tab])
+      window.history.pushState({ tab }, '', `#${tab.toLowerCase().replace(/\s+/g, '-')}`)
+    }
+    setActive(tab)
+    setSidebarOpen(false)
+  }
+
+  const handleGoBack = () => {
+    if (navHistory.length > 1) {
+      const nextHistory = navHistory.slice(0, -1)
+      const prevTab = nextHistory[nextHistory.length - 1]
+      setNavHistory(nextHistory)
+      setActive(prevTab)
+      window.history.pushState({ tab: prevTab }, '', `#${prevTab.toLowerCase().replace(/\s+/g, '-')}`)
+    } else {
+      navigateTo('Overview', false)
+    }
+  }
+
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      const tab = e.state?.tab
+      if (tab) {
+        setActive(tab)
+      } else {
+        const hash = window.location.hash.replace('#', '')
+        const tabMap: Record<string, string> = {
+          overview: 'Overview',
+          members: 'Members',
+          renewals: 'Renewals',
+          'membership-plans': 'Membership plans',
+          payments: 'Payments',
+          'gym-profile': 'Gym profile',
+        }
+        setActive(tabMap[hash] || 'Overview')
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   // Initial Auth Check
   useEffect(() => {
@@ -308,18 +356,17 @@ export function App() {
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-brand">
           <div className="brand-mark">
-            <Dumbbell size={19} />
+            <Dumbbell size={18} />
           </div>
           <div className="brand-text-col">
-            <span className="brand-title">
-              {gym.name}
-            </span>
-            <span className="brand-sub">Gym Manager</span>
+            <span className="brand-title">{gym.name}</span>
+            <span className="brand-sub">Gym Workspace</span>
           </div>
           <button
             type="button"
             className="icon-button close-sidebar-btn"
             onClick={() => setSidebarOpen(false)}
+            aria-label="Close sidebar"
           >
             <X size={18} />
           </button>
@@ -334,13 +381,10 @@ export function App() {
                 key={item.label}
                 type="button"
                 className={`nav-button ${isCurrent ? 'active' : ''}`}
-                onClick={() => {
-                  setActive(item.label)
-                  setSidebarOpen(false)
-                }}
+                onClick={() => navigateTo(item.label)}
               >
                 <div className="nav-item-left">
-                  <Icon size={18} />
+                  <Icon size={17} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge !== undefined && (
@@ -353,9 +397,7 @@ export function App() {
 
         <div className="sidebar-footer">
           <div className="owner-profile-card">
-            <div className="owner-avatar">
-              {initials(owner.name)}
-            </div>
+            <div className="owner-avatar">{initials(owner.name)}</div>
             <div className="owner-details">
               <strong>{owner.name}</strong>
               <span>{owner.phone}</span>
@@ -374,15 +416,12 @@ export function App() {
 
       {/* BACKDROP SCRIM FOR MOBILE DRAWER */}
       {sidebarOpen && (
-        <div
-          className="sidebar-scrim"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="sidebar-scrim" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* MAIN CONTENT AREA */}
       <div className="main-area">
-        {/* TOPBAR */}
+        {/* TOPBAR (UNIFIED SINGLE SOURCE OF TRUTH) */}
         <header className="topbar">
           <div className="topbar-left">
             <button
@@ -393,7 +432,30 @@ export function App() {
             >
               <Menu size={20} />
             </button>
-            <h1 className="topbar-title">{active}</h1>
+
+            {active !== 'Overview' && (
+              <button
+                type="button"
+                className="topbar-back-btn"
+                onClick={handleGoBack}
+                title="Go back to previous page"
+              >
+                <ArrowLeft size={15} />
+                <span>Back</span>
+              </button>
+            )}
+
+            <div className="topbar-breadcrumbs">
+              <button
+                type="button"
+                className="crumb-link"
+                onClick={() => navigateTo('Overview')}
+              >
+                {gym.name}
+              </button>
+              <span className="crumb-sep">/</span>
+              <span className="crumb-current">{active}</span>
+            </div>
           </div>
 
           <div className="topbar-right">
@@ -415,7 +477,7 @@ export function App() {
               }}
             >
               <Plus size={15} />
-              <span className="hide-mobile">Add Member</span>
+              <span>Add Member</span>
             </button>
           </div>
         </header>
@@ -447,7 +509,7 @@ export function App() {
               upiId={integrations.upiId}
               customTemplate={integrations.renewalTemplate}
               plans={plans}
-              onNavigateTab={tab => setActive(tab)}
+              onNavigateTab={tab => navigateTo(tab)}
               onOpenAddMember={() => {
                 setEditingMember(null)
                 setMemberModal(true)
@@ -549,7 +611,7 @@ export function App() {
         {/* MOBILE STICKY BOTTOM NAV BAR */}
         <MobileBottomNav
           activeTab={active}
-          onSelectTab={setActive}
+          onSelectTab={tab => navigateTo(tab)}
           renewalsDueCount={renewalsDueCount}
         />
       </div>

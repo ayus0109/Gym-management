@@ -76,30 +76,22 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   return (
     <div className="overview-page">
-      {/* Welcome & Quick Action Bar */}
-      <div className="page-heading">
-        <div>
-          <h2>Gym Command Center</h2>
+      {/* Welcome & Command Header */}
+      <div className="overview-header-banner">
+        <div className="ohb-content">
+          <h2>Command Center</h2>
           <p>
-            Welcome, <strong>{gym.name}</strong>. Here is your daily membership status and cash flow.
+            Welcome, <strong>{gym.name}</strong>. Here is your daily membership pulse and cash flow.
           </p>
         </div>
-        <div className="heading-actions">
+        <div className="ohb-actions">
           <button
             type="button"
             className="button button-secondary"
             onClick={onOpenImportModal}
           >
-            <FileSpreadsheet size={16} />
+            <FileSpreadsheet size={15} />
             <span>Import Excel</span>
-          </button>
-          <button
-            type="button"
-            className="button button-primary"
-            onClick={onOpenAddMember}
-          >
-            <Plus size={16} />
-            <span>Add Member</span>
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import {
-  Activity, ArrowRight, ArrowLeft, ArrowUpRight, Bell, CalendarDays,
+  Activity, AlertTriangle, ArrowRight, ArrowLeft, ArrowUpRight, Bell, CalendarDays,
   Check, CheckCircle2, ChevronRight, Dumbbell, Flame, LockKeyhole,
   Mail, MapPin, Phone, ShieldCheck, Sparkles, Star, UserRound, Users,
   Wallet, Zap
@@ -288,7 +288,9 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
               <h3>Dynamic Membership Plans</h3>
               <p>Configure custom durations (from 15-day trials to annual all-access passes) with live pricing models and instant member enrollment.</p>
               <div className="feature-mock-row">
-                <div className="mock-avatar blue">⚡</div>
+                <div className="mock-avatar blue">
+                  <Zap size={14} />
+                </div>
                 <div className="mock-info">
                   <strong>Quarterly Elite Pass</strong>
                   <span>90 Days Unlimited Access</span>
@@ -552,7 +554,7 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
 
           {error && (
             <div className="auth-error-pro" role="alert">
-              <span>⚠️</span>
+              <AlertTriangle size={16} />
               <p>{error}</p>
             </div>
           )}

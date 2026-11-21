@@ -145,28 +145,28 @@ export const RenewalsTab: React.FC<RenewalsTabProps> = ({
             className={`filter-chip chip-red ${filter === 'overdue' ? 'active' : ''}`}
             onClick={() => setFilter('overdue')}
           >
-            🔴 Overdue ({counts.overdue})
+            <span className="status-dot dot-red" /> Overdue ({counts.overdue})
           </button>
           <button
             type="button"
             className={`filter-chip chip-amber ${filter === 'today' ? 'active' : ''}`}
             onClick={() => setFilter('today')}
           >
-            ⚠️ Expiring Today ({counts.today})
+            <span className="status-dot dot-amber" /> Expiring Today ({counts.today})
           </button>
           <button
             type="button"
             className={`filter-chip chip-orange ${filter === '3days' ? 'active' : ''}`}
             onClick={() => setFilter('3days')}
           >
-            🕒 In 3 Days ({counts['3days']})
+            <span className="status-dot dot-orange" /> In 3 Days ({counts['3days']})
           </button>
           <button
             type="button"
             className={`filter-chip chip-blue ${filter === '7days' ? 'active' : ''}`}
             onClick={() => setFilter('7days')}
           >
-            📅 This Week ({counts['7days']})
+            <span className="status-dot dot-blue" /> This Week ({counts['7days']})
           </button>
         </div>
 

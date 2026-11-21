@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
-import { Check, Copy, Download, MessageCircle, Send, X, ExternalLink } from 'lucide-react'
+import { AlertTriangle, Check, Copy, Download, MessageCircle, Send, Sparkles, X, ExternalLink } from 'lucide-react'
 import {
   formatRenewalMessage,
   generateUpiUrl,
@@ -187,7 +187,10 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
 
           {!upiId && (
             <div className="upi-warning-banner">
-              ⚠️ <strong>No UPI ID configured.</strong> Please add your UPI ID (e.g. <code>fitzone@okaxis</code>) in <strong>Gym profile</strong> so members can pay you directly.
+              <AlertTriangle size={15} />
+              <span>
+                <strong>No UPI ID configured.</strong> Please add your UPI ID (e.g. <code>fitzone@okaxis</code>) in <strong>Gym profile</strong> so members can pay you directly.
+              </span>
             </div>
           )}
 
@@ -237,7 +240,8 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
                 rows={7}
               />
               <span className="preview-hint">
-                💡 Tip: Click <strong>Open WhatsApp</strong>, then paste (Ctrl+V) the QR code if you want to attach it to the chat!
+                <Sparkles size={13} />
+                <span>Tip: Click <strong>Open WhatsApp</strong>, then paste (Ctrl+V) the QR code if you want to attach it to the chat.</span>
               </span>
             </div>
           </div>

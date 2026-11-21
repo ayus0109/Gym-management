@@ -126,7 +126,7 @@ export const MembersTab: React.FC<MembersTabProps> = ({
             onClick={() => setShowImportModal(true)}
             title="Import members from spreadsheet"
           >
-            <FileSpreadsheet size={16} />
+            <FileSpreadsheet size={15} />
             <span>Import Excel</span>
           </button>
           <button
@@ -135,16 +135,8 @@ export const MembersTab: React.FC<MembersTabProps> = ({
             onClick={handleExportCsv}
             title="Download member roster as CSV"
           >
-            <Download size={16} />
+            <Download size={15} />
             <span>Export CSV</span>
-          </button>
-          <button
-            type="button"
-            className="button button-primary"
-            onClick={onOpenAddMember}
-          >
-            <Plus size={16} />
-            <span>Add Member</span>
           </button>
         </div>
       </div>

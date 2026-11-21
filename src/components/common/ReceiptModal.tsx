@@ -21,7 +21,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   const receiptId = `RCP-${payment.id.slice(-6).toUpperCase()}`
   const dateStr = payment.paymentDate ? shortDate(payment.paymentDate) : shortDate(payment.createdAt)
 
-  const receiptText = `🧾 *PAYMENT RECEIPT*
+  const receiptText = `*OFFICIAL PAYMENT RECEIPT*
 ${gym.name}
 ${gym.address || ''} · Tel: ${gym.phone}
 ----------------------------------------
@@ -33,10 +33,10 @@ Plan       : ${payment.membership.planNameSnapshot}
 ----------------------------------------
 Amount     : ${money(payment.amountPaise)}
 Method     : ${payment.method}
-Status     : PAID ✅
+Status     : PAID (CONFIRMED)
 Ref No     : ${payment.transactionReference || 'N/A'}
 ----------------------------------------
-Thank you for your payment! Keep training strong! 💪`
+Thank you for your payment.`
 
   const handleCopyText = async () => {
     try {

@@ -10,7 +10,7 @@
     "dev:worker": "tsx watch server/src/worker.ts",
     "start": "node dist-server/server/src/index.js",
     "start:worker": "node dist-server/server/src/worker.js",
-    "build": "tsc -b && tsc --project tsconfig.server.json && vite build",
+    "build": "npm run db:generate && tsc -b && tsc --project tsconfig.server.json && vite build",
     "preview": "vite preview",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -19,7 +19,8 @@
     "test": "tsx --test server/src/domain.test.ts server/src/tenant.integration.test.ts"
   },
   "dependencies": {
-    "@prisma/client": "6.19.3",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -46,15 +47,20 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.3.0",
     "concurrently": "^9.2.1",
-    "prisma": "6.19.3",
+    "prisma": "^7.10.1",
     "tsx": "^4.20.6",
     "typescript": "7.0.2",
     "vite": "8.3.8"
   },
   "allowScripts": {
-    "prisma@6.19.3": true,
-    "@prisma/engines@6.19.3": true,
+    "prisma@7.10.1": true,
+    "@prisma/engines@7.10.1": true,
     "esbuild@0.25.12": true,
-    "@prisma/client@6.19.3": true
+    "@prisma/client@7.10.1": true
+  },
+  "overrides": {
+    "@prisma/config": {
+      "effect": "3.22.2"
+    }
   }
 }

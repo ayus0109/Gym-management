@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import bcrypt from 'bcryptjs'
-import { MembershipStatus, PaymentMethod, PaymentStatus } from '@prisma/client'
+import { MembershipStatus, PaymentMethod, PaymentStatus } from '../server/generated/prisma/client.js'
 import { prisma } from '../server/src/db.js'
 import { expiryFor, reminderTimeFor, utcDateOnly } from '../server/src/domain.js'
 

@@ -108,13 +108,163 @@ ownerRouter.get('/dashboard', async (req: AuthenticatedRequest, res, next) => {
 
 ownerRouter.get('/members', async (req: AuthenticatedRequest, res, next) => {
   try {
-    const gymId = tenantId(req); const q = String(req.query.q ?? '').trim(); const status = String(req.query.status ?? ''); const page = Math.max(1, Number(req.query.page) || 1); const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize) || 20)); const today = utcDateOnly(DateTime.now().setZone(APP_TIMEZONE).toISODate()!)
+    const gymId = tenantId(req); const q = String(req.query.q ?? '').trim(); const status = String(req.query.status ?? ''); const page = Math.max(1, Number(req.query.page) || 1); const pageSize = Math.min(1000, Math.max(1, Number(req.query.pageSize) || 50)); const today = utcDateOnly(DateTime.now().setZone(APP_TIMEZONE).toISODate()!)
     const where: Prisma.MemberWhereInput = { gymId, isArchived: false, ...(q ? { OR: [{ name: { contains: q, mode: 'insensitive' } }, { phone: { contains: q } }] } : {}) }
-    const [items, total] = await Promise.all([prisma.member.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * pageSize, take: pageSize, include: { memberships: { orderBy: { createdAt: 'desc' }, take: 1, include: { payments: { orderBy: { createdAt: 'desc' }, take: 1 } } } } }), prisma.member.count({ where })])
-    const filtered = status ? items.filter(m => { const membership = m.memberships[0]; if (!membership) return status === 'No membership'; const paid = membership.payments.some(p => p.status === PaymentStatus.PAID); if (!paid) return status === 'Pending payment'; if (membership.expiryDate < today) return status === 'Expired'; if (membership.expiryDate.getTime() - today.getTime() <= 7 * 86400000) return status === 'Expiring soon'; return status === 'Active' }) : items
-    res.json({ items: filtered, total, page, pageSize })
+    const [items, total] = await Promise.all([
+      prisma.member.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: status ? 0 : (page - 1) * pageSize,
+        take: status ? 1000 : pageSize,
+        include: {
+          memberships: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            include: { payments: { orderBy: { createdAt: 'desc' }, take: 1 } }
+          }
+        }
+      }),
+      prisma.member.count({ where })
+    ])
+    const filtered = status ? items.filter(m => {
+      const membership = m.memberships[0];
+      if (!membership) return status === 'No membership';
+      const paid = membership.payments.some(p => p.status === PaymentStatus.PAID);
+      if (!paid) return status === 'Pending payment';
+      if (membership.expiryDate < today) return status === 'Expired';
+      if (membership.expiryDate.getTime() - today.getTime() <= 7 * 86400000) return status === 'Expiring soon';
+      return status === 'Active'
+    }) : items
+    res.json({
+      items: status ? filtered.slice((page - 1) * pageSize, page * pageSize) : filtered,
+      total: status ? filtered.length : total,
+      page,
+      pageSize
+    })
   } catch (error) { next(error) }
 })
+
+const bulkImportMemberSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  phone: z.string().min(8).max(30),
+  email: z.union([z.string().email().max(254), z.literal(''), z.null()]).optional(),
+  planName: z.string().trim().max(80).optional(),
+  planId: z.string().optional(),
+  startDate: z.string().optional(),
+  paymentStatus: z.enum(['PENDING', 'PAID']).default('PAID'),
+  paymentMethod: z.enum(['CASH', 'UPI_OFFLINE', 'BANK_TRANSFER']).default('CASH')
+})
+const bulkImportSchema = z.object({
+  members: z.array(bulkImportMemberSchema).min(1).max(1000)
+})
+
+ownerRouter.post('/members/import', async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const gymId = tenantId(req)
+    const { members } = bulkImportSchema.parse(req.body)
+    const existingPlans = await prisma.membershipPlan.findMany({ where: { gymId, isActive: true } })
+
+    let defaultPlan = existingPlans[0]
+    if (!defaultPlan) {
+      defaultPlan = await prisma.membershipPlan.create({
+        data: {
+          gymId,
+          name: 'Standard Monthly',
+          durationDays: 30,
+          pricePaise: paiseFromRupees(1500),
+          isActive: true
+        }
+      })
+      existingPlans.push(defaultPlan)
+    }
+
+    let importedCount = 0
+    const errors: string[] = []
+
+    for (const [idx, item] of members.entries()) {
+      try {
+        const phone = normalizePhone(item.phone)
+        let plan = defaultPlan
+        if (item.planId) {
+          const found = existingPlans.find(p => p.id === item.planId)
+          if (found) plan = found
+        } else if (item.planName?.trim()) {
+          const found = existingPlans.find(p => p.name.toLowerCase() === item.planName!.trim().toLowerCase())
+          if (found) {
+            plan = found
+          } else {
+            const createdPlan = await prisma.membershipPlan.create({
+              data: {
+                gymId,
+                name: item.planName.trim(),
+                durationDays: 30,
+                pricePaise: paiseFromRupees(1500),
+                isActive: true
+              }
+            })
+            existingPlans.push(createdPlan)
+            plan = createdPlan
+          }
+        }
+
+        const startDate = utcDateOnly(item.startDate || DateTime.now().setZone(APP_TIMEZONE).toISODate()!)
+        const expiryDate = expiryFor(startDate, plan.durationDays)
+        const paid = item.paymentStatus === 'PAID'
+        const status = paid ? MembershipStatus.ACTIVE : MembershipStatus.PENDING_PAYMENT
+
+        await prisma.$transaction(async tx => {
+          const created = await tx.member.create({
+            data: {
+              gymId,
+              name: item.name.trim(),
+              phone,
+              email: item.email?.trim() || null
+            }
+          })
+          const membership = await tx.membership.create({
+            data: {
+              gymId,
+              memberId: created.id,
+              planId: plan.id,
+              planNameSnapshot: plan.name,
+              durationDaysSnapshot: plan.durationDays,
+              amountPaise: plan.pricePaise,
+              startDate,
+              expiryDate,
+              status
+            }
+          })
+          await tx.payment.create({
+            data: {
+              gymId,
+              memberId: created.id,
+              membershipId: membership.id,
+              amountPaise: plan.pricePaise,
+              method: paid ? (item.paymentMethod as PaymentMethod) : PaymentMethod.CASH,
+              status: paid ? PaymentStatus.PAID : PaymentStatus.PENDING,
+              paymentDate: paid ? new Date() : null
+            }
+          })
+          await tx.notification.create({
+            data: {
+              gymId,
+              memberId: created.id,
+              membershipId: membership.id,
+              type: 'RENEWAL_T_MINUS_2',
+              scheduledAt: reminderTimeFor(expiryDate)
+            }
+          })
+        })
+        importedCount++
+      } catch (err: any) {
+        errors.push(`Row ${idx + 1} (${item.name}): ${err?.message ?? 'Invalid entry'}`)
+      }
+    }
+
+    res.json({ success: true, count: importedCount, total: members.length, errors })
+  } catch (error) { next(error) }
+})
+
 ownerRouter.post('/members', async (req: AuthenticatedRequest, res, next) => {
   try {
     const input = memberSchema.parse(req.body); const gymId = tenantId(req); const plan = await prisma.membershipPlan.findFirst({ where: { id: input.planId, gymId, isActive: true } }); if (!plan) return httpError(res, 404, 'Choose an active membership plan.')
@@ -168,16 +318,67 @@ ownerRouter.post('/payments/offline', async (req: AuthenticatedRequest, res, nex
 })
 
 ownerRouter.get('/settings/integrations', async (req: AuthenticatedRequest, res, next) => {
-  try { const settings = await prisma.integrationSettings.findUnique({ where: { gymId: tenantId(req) } }); res.json({ razorpayConfigured: Boolean(settings?.razorpayKeyIdEncrypted && settings.razorpaySecretEncrypted), whatsappConfigured: Boolean(settings?.whatsappTokenEncrypted && settings.whatsappPhoneNumberId && settings.whatsappTemplateName), whatsappPhoneNumberId: settings?.whatsappPhoneNumberId ?? '', whatsappBusinessAccountId: settings?.whatsappBusinessAccountId ?? '', whatsappTemplateName: settings?.whatsappTemplateName ?? '', whatsappTemplateLanguage: settings?.whatsappTemplateLanguage ?? 'en' }) } catch (error) { next(error) }
+  try {
+    const settings = await prisma.integrationSettings.findUnique({ where: { gymId: tenantId(req) } });
+    res.json({
+      razorpayConfigured: Boolean(settings?.razorpayKeyIdEncrypted && settings.razorpaySecretEncrypted),
+      whatsappConfigured: Boolean(settings?.whatsappTokenEncrypted && settings.whatsappPhoneNumberId && settings.whatsappTemplateName),
+      upiId: settings?.whatsappBusinessAccountId ?? '',
+      renewalTemplate: settings?.whatsappTemplateName ?? '',
+      whatsappPhoneNumberId: settings?.whatsappPhoneNumberId ?? '',
+      whatsappBusinessAccountId: settings?.whatsappBusinessAccountId ?? '',
+      whatsappTemplateName: settings?.whatsappTemplateName ?? '',
+      whatsappTemplateLanguage: settings?.whatsappTemplateLanguage ?? 'en'
+    })
+  } catch (error) { next(error) }
 })
 ownerRouter.put('/settings/integrations', async (req: AuthenticatedRequest, res, next) => {
   try {
-    const input = z.object({ razorpayKeyId: z.string().max(200).optional(), razorpaySecret: z.string().max(500).optional(), razorpayWebhookSecret: z.string().max(500).optional(), whatsappToken: z.string().max(1000).optional(), whatsappPhoneNumberId: z.string().max(200).optional(), whatsappBusinessAccountId: z.string().max(200).optional(), whatsappTemplateName: z.string().max(200).optional(), whatsappTemplateLanguage: z.string().max(20).optional() }).parse(req.body)
+    const input = z.object({
+      upiId: z.string().max(200).optional(),
+      renewalTemplate: z.string().max(2000).optional(),
+      razorpayKeyId: z.string().max(200).optional(),
+      razorpaySecret: z.string().max(500).optional(),
+      razorpayWebhookSecret: z.string().max(500).optional(),
+      whatsappToken: z.string().max(1000).optional(),
+      whatsappPhoneNumberId: z.string().max(200).optional(),
+      whatsappBusinessAccountId: z.string().max(200).optional(),
+      whatsappTemplateName: z.string().max(2000).optional(),
+      whatsappTemplateLanguage: z.string().max(20).optional()
+    }).parse(req.body)
     const enc = (value?: string) => value ? encryptSecret(value) : undefined
-    const data = { ...(enc(input.razorpayKeyId) ? { razorpayKeyIdEncrypted: enc(input.razorpayKeyId) } : {}), ...(enc(input.razorpaySecret) ? { razorpaySecretEncrypted: enc(input.razorpaySecret) } : {}), ...(enc(input.razorpayWebhookSecret) ? { razorpayWebhookEncrypted: enc(input.razorpayWebhookSecret) } : {}), ...(enc(input.whatsappToken) ? { whatsappTokenEncrypted: enc(input.whatsappToken) } : {}), ...(input.whatsappPhoneNumberId?.trim() ? { whatsappPhoneNumberId: input.whatsappPhoneNumberId } : {}), ...(input.whatsappBusinessAccountId?.trim() ? { whatsappBusinessAccountId: input.whatsappBusinessAccountId } : {}), ...(input.whatsappTemplateName?.trim() ? { whatsappTemplateName: input.whatsappTemplateName } : {}), ...(input.whatsappTemplateLanguage !== undefined ? { whatsappTemplateLanguage: input.whatsappTemplateLanguage } : {}) }
-    const nonblank = (value?: string) => value?.trim() ? value : undefined
-    const saved = await prisma.integrationSettings.upsert({ where: { gymId: tenantId(req) }, create: { gymId: tenantId(req), ...data }, update: { ...data, ...(nonblank(input.whatsappPhoneNumberId) ? { whatsappPhoneNumberId: nonblank(input.whatsappPhoneNumberId) } : {}), ...(nonblank(input.whatsappBusinessAccountId) ? { whatsappBusinessAccountId: nonblank(input.whatsappBusinessAccountId) } : {}), ...(nonblank(input.whatsappTemplateName) ? { whatsappTemplateName: nonblank(input.whatsappTemplateName) } : {}) } })
-    res.json({ razorpayConfigured: Boolean(saved.razorpayKeyIdEncrypted && saved.razorpaySecretEncrypted), whatsappConfigured: Boolean(saved.whatsappTokenEncrypted && saved.whatsappPhoneNumberId && saved.whatsappTemplateName), whatsappPhoneNumberId: saved.whatsappPhoneNumberId ?? '', whatsappBusinessAccountId: saved.whatsappBusinessAccountId ?? '', whatsappTemplateName: saved.whatsappTemplateName ?? '', whatsappTemplateLanguage: saved.whatsappTemplateLanguage })
+    const upiIdValue = input.upiId !== undefined ? input.upiId.trim() : (input.whatsappBusinessAccountId !== undefined ? input.whatsappBusinessAccountId.trim() : undefined)
+    const templateValue = input.renewalTemplate !== undefined ? input.renewalTemplate.trim() : (input.whatsappTemplateName !== undefined ? input.whatsappTemplateName.trim() : undefined)
+    const data = {
+      ...(enc(input.razorpayKeyId) ? { razorpayKeyIdEncrypted: enc(input.razorpayKeyId) } : {}),
+      ...(enc(input.razorpaySecret) ? { razorpaySecretEncrypted: enc(input.razorpaySecret) } : {}),
+      ...(enc(input.razorpayWebhookSecret) ? { razorpayWebhookEncrypted: enc(input.razorpayWebhookSecret) } : {}),
+      ...(enc(input.whatsappToken) ? { whatsappTokenEncrypted: enc(input.whatsappToken) } : {}),
+      ...(input.whatsappPhoneNumberId?.trim() ? { whatsappPhoneNumberId: input.whatsappPhoneNumberId.trim() } : {}),
+      ...(upiIdValue !== undefined ? { whatsappBusinessAccountId: upiIdValue } : {}),
+      ...(templateValue !== undefined ? { whatsappTemplateName: templateValue } : {}),
+      ...(input.whatsappTemplateLanguage !== undefined ? { whatsappTemplateLanguage: input.whatsappTemplateLanguage } : {})
+    }
+    const saved = await prisma.integrationSettings.upsert({
+      where: { gymId: tenantId(req) },
+      create: { gymId: tenantId(req), ...data },
+      update: {
+        ...data,
+        ...(input.whatsappPhoneNumberId?.trim() ? { whatsappPhoneNumberId: input.whatsappPhoneNumberId.trim() } : {}),
+        ...(upiIdValue !== undefined ? { whatsappBusinessAccountId: upiIdValue } : {}),
+        ...(templateValue !== undefined ? { whatsappTemplateName: templateValue } : {})
+      }
+    })
+    res.json({
+      razorpayConfigured: Boolean(saved.razorpayKeyIdEncrypted && saved.razorpaySecretEncrypted),
+      whatsappConfigured: Boolean(saved.whatsappTokenEncrypted && saved.whatsappPhoneNumberId && saved.whatsappTemplateName),
+      upiId: saved.whatsappBusinessAccountId ?? '',
+      renewalTemplate: saved.whatsappTemplateName ?? '',
+      whatsappPhoneNumberId: saved.whatsappPhoneNumberId ?? '',
+      whatsappBusinessAccountId: saved.whatsappBusinessAccountId ?? '',
+      whatsappTemplateName: saved.whatsappTemplateName ?? '',
+      whatsappTemplateLanguage: saved.whatsappTemplateLanguage
+    })
   } catch (error) { next(error) }
 })
 

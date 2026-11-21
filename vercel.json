@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://forma-gym-app.onrender.com/api/:path*"
+    }
+  ]
+}

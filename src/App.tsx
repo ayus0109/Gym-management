@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageCircle,
   Moon,
   Plus,
   Search,
@@ -211,6 +212,222 @@ export function App() {
   // Load Data
   const loadData = async () => {
     setError('')
+
+    // Interactive Demo Sandbox Mode (Zero Backend Auth Required)
+    if (owner?.id === 'demo-owner') {
+      const today = new Date()
+      const d1 = new Date(today.getTime() + 2 * 86400000).toISOString()
+      const d2 = new Date(today.getTime() + 4 * 86400000).toISOString()
+      const d3 = new Date(today.getTime() + 6 * 86400000).toISOString()
+      const dPast = new Date(today.getTime() - 3 * 86400000).toISOString()
+      const dActive = new Date(today.getTime() + 45 * 86400000).toISOString()
+
+      const demoPlans: PlanDto[] = [
+        { id: 'dp-1', name: '1 Month Standard', durationDays: 30, pricePaise: 150000, isActive: true, description: 'Full gym floor & cardio access' },
+        { id: 'dp-2', name: '3 Months Transformation', durationDays: 90, pricePaise: 380000, isActive: true, description: 'Gym + locker + fitness assessment' },
+        { id: 'dp-3', name: '6 Months Strength Pass', durationDays: 180, pricePaise: 650000, isActive: true, description: 'All access with trainer guidance' },
+        { id: 'dp-4', name: '1 Year Elite Annual', durationDays: 365, pricePaise: 1199900, isActive: true, description: 'VIP annual membership with priority perks' },
+      ]
+
+      const demoMembers: MemberDto[] = [
+        {
+          id: 'dm-1',
+          name: 'Rahul Verma',
+          phone: '+919876543210',
+          email: 'rahul.verma@example.com',
+          createdAt: new Date().toISOString(),
+          memberships: [{
+            id: 'dms-1',
+            planNameSnapshot: '1 Month Standard',
+            amountPaise: 150000,
+            startDate: new Date(today.getTime() - 28 * 86400000).toISOString(),
+            expiryDate: d1,
+            status: 'ACTIVE',
+            payments: [{ id: 'dp-p1', amountPaise: 150000, status: 'PAID', method: 'UPI_OFFLINE' }],
+          }],
+        },
+        {
+          id: 'dm-2',
+          name: 'Priya Sharma',
+          phone: '+919823456789',
+          email: 'priya.s@example.com',
+          createdAt: new Date().toISOString(),
+          memberships: [{
+            id: 'dms-2',
+            planNameSnapshot: '3 Months Transformation',
+            amountPaise: 380000,
+            startDate: new Date(today.getTime() - 86 * 86400000).toISOString(),
+            expiryDate: d2,
+            status: 'ACTIVE',
+            payments: [{ id: 'dp-p2', amountPaise: 380000, status: 'PAID', method: 'CASH' }],
+          }],
+        },
+        {
+          id: 'dm-3',
+          name: 'Amit Patel',
+          phone: '+919712345678',
+          email: 'amit.patel@example.com',
+          createdAt: new Date().toISOString(),
+          memberships: [{
+            id: 'dms-3',
+            planNameSnapshot: '1 Month Standard',
+            amountPaise: 150000,
+            startDate: new Date(today.getTime() - 24 * 86400000).toISOString(),
+            expiryDate: d3,
+            status: 'ACTIVE',
+            payments: [{ id: 'dp-p3', amountPaise: 150000, status: 'PAID', method: 'UPI_OFFLINE' }],
+          }],
+        },
+        {
+          id: 'dm-4',
+          name: 'Sneha Reddy',
+          phone: '+919654321098',
+          email: 'sneha.r@example.com',
+          createdAt: new Date().toISOString(),
+          memberships: [{
+            id: 'dms-4',
+            planNameSnapshot: '6 Months Strength Pass',
+            amountPaise: 650000,
+            startDate: new Date(today.getTime() - 183 * 86400000).toISOString(),
+            expiryDate: dPast,
+            status: 'EXPIRED',
+            payments: [{ id: 'dp-p4', amountPaise: 650000, status: 'PAID', method: 'UPI_OFFLINE' }],
+          }],
+        },
+        {
+          id: 'dm-5',
+          name: 'Vikramaditya Rao',
+          phone: '+919543210987',
+          email: 'vikram.rao@example.com',
+          createdAt: new Date().toISOString(),
+          memberships: [{
+            id: 'dms-5',
+            planNameSnapshot: '1 Year Elite Annual',
+            amountPaise: 1199900,
+            startDate: new Date(today.getTime() - 60 * 86400000).toISOString(),
+            expiryDate: dActive,
+            status: 'ACTIVE',
+            payments: [{ id: 'dp-p5', amountPaise: 1199900, status: 'PAID', method: 'BANK_TRANSFER' }],
+          }],
+        },
+        {
+          id: 'dm-6',
+          name: 'Ananya Deshmukh',
+          phone: '+919432109876',
+          email: 'ananya.d@example.com',
+          createdAt: new Date().toISOString(),
+          memberships: [{
+            id: 'dms-6',
+            planNameSnapshot: '3 Months Transformation',
+            amountPaise: 380000,
+            startDate: new Date().toISOString(),
+            expiryDate: new Date(today.getTime() + 90 * 86400000).toISOString(),
+            status: 'PENDING_PAYMENT',
+            payments: [{ id: 'dp-p6', amountPaise: 380000, status: 'PENDING', method: 'UPI_OFFLINE' }],
+          }],
+        },
+      ]
+
+      const demoPayments: PaymentDto[] = [
+        {
+          id: 'dpay-1',
+          amountPaise: 150000,
+          status: 'PAID',
+          method: 'UPI_OFFLINE',
+          paymentDate: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          transactionReference: 'UPI-DEMO-001',
+          member: { name: 'Rahul Verma', phone: '+919876543210' },
+          membership: { planNameSnapshot: '1 Month Standard' },
+        },
+        {
+          id: 'dpay-2',
+          amountPaise: 380000,
+          status: 'PAID',
+          method: 'CASH',
+          paymentDate: new Date(today.getTime() - 86400000).toISOString(),
+          createdAt: new Date(today.getTime() - 86400000).toISOString(),
+          transactionReference: 'CASH-REC-002',
+          member: { name: 'Priya Sharma', phone: '+919823456789' },
+          membership: { planNameSnapshot: '3 Months Transformation' },
+        },
+        {
+          id: 'dpay-3',
+          amountPaise: 1199900,
+          status: 'PAID',
+          method: 'BANK_TRANSFER',
+          paymentDate: new Date(today.getTime() - 3 * 86400000).toISOString(),
+          createdAt: new Date(today.getTime() - 3 * 86400000).toISOString(),
+          transactionReference: 'IMPS-DEMO-003',
+          member: { name: 'Vikramaditya Rao', phone: '+919543210987' },
+          membership: { planNameSnapshot: '1 Year Elite Annual' },
+        },
+        {
+          id: 'dpay-4',
+          amountPaise: 380000,
+          status: 'PENDING',
+          method: 'UPI_OFFLINE',
+          paymentDate: null,
+          createdAt: new Date().toISOString(),
+          transactionReference: null,
+          member: { name: 'Ananya Deshmukh', phone: '+919432109876' },
+          membership: { planNameSnapshot: '3 Months Transformation' },
+        },
+      ]
+
+      const demoDashboard: DashboardDto = {
+        metrics: {
+          totalMembers: 48,
+          activeMemberships: 43,
+          expiredMemberships: 2,
+          expiringSoon: 3,
+          monthlyRevenuePaise: 8450000,
+          pendingPaymentsPaise: 380000,
+          pendingPaymentCount: 1,
+          newRegistrations: 6,
+        },
+        recentMembers: demoMembers,
+        recentPayments: demoPayments,
+        expiringList: [
+          {
+            id: 'dex-1',
+            expiryDate: d1,
+            planNameSnapshot: '1 Month Standard',
+            member: { name: 'Rahul Verma' },
+          },
+          {
+            id: 'dex-2',
+            expiryDate: d2,
+            planNameSnapshot: '3 Months Transformation',
+            member: { name: 'Priya Sharma' },
+          },
+          {
+            id: 'dex-3',
+            expiryDate: d3,
+            planNameSnapshot: '1 Month Standard',
+            member: { name: 'Amit Patel' },
+          },
+        ],
+      }
+
+      setDashboard(demoDashboard)
+      setMemberDtos(demoMembers)
+      setMembers(demoMembers.map(mapMember))
+      setPlans(demoPlans)
+      setPayments(demoPayments)
+      setIntegrations({
+        razorpayConfigured: false,
+        whatsappConfigured: false,
+        upiId: 'ironpeak@okaxis',
+        renewalTemplate: 'Hi {name}! Your gym membership ({planName}) at {gymName} is expiring on {expiryDate}. Renewal fee: ₹{amount}. Pay directly via UPI: {upiLink} or scan the QR code attached.',
+        whatsappPhoneNumberId: '',
+        whatsappBusinessAccountId: '',
+        whatsappTemplateName: '',
+        whatsappTemplateLanguage: 'en',
+      })
+      return
+    }
+
     try {
       const [dashboardData, memberData, planData, paymentData, integrationData] =
         await Promise.all([
@@ -243,6 +460,13 @@ export function App() {
   // Member Save (Add / Edit)
   const handleSaveMember = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (owner?.id === 'demo-owner') {
+      showToast('Demo Sandbox: Action simulated! (Contact Ayush for a private gym workspace)')
+      setMemberModal(false)
+      setEditingMember(null)
+      return
+    }
+
     const form = event.currentTarget
     const values = Object.fromEntries(new FormData(form).entries())
     try {
@@ -281,6 +505,11 @@ export function App() {
 
   // Archive Member
   const handleArchiveMember = async (member: MemberView) => {
+    if (owner?.id === 'demo-owner') {
+      showToast('Demo Sandbox: Action simulated!')
+      return
+    }
+
     if (!window.confirm(`Archive ${member.name}? Their payment records will be preserved.`)) return
     try {
       await api(`/members/${member.id}`, { method: 'DELETE' })
@@ -294,6 +523,13 @@ export function App() {
   // Record Offline Payment
   const handleRecordOfflinePayment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (owner?.id === 'demo-owner') {
+      showToast('Demo Sandbox: Offline payment recorded and receipt created!')
+      setOfflinePaymentModal(false)
+      setOfflinePaymentPreselect(null)
+      return
+    }
+
     const values = Object.fromEntries(new FormData(event.currentTarget).entries())
     try {
       await api('/payments/offline', {
@@ -316,9 +552,11 @@ export function App() {
 
   // Sign out
   const handleSignOut = async () => {
-    try {
-      await api('/auth/logout', { method: 'POST' })
-    } catch {}
+    if (owner?.id !== 'demo-owner') {
+      try {
+        await api('/auth/logout', { method: 'POST' })
+      } catch {}
+    }
     setOwner(null)
     setGym(null)
   }
@@ -432,6 +670,40 @@ export function App() {
 
       {/* MAIN CONTENT AREA */}
       <div className="main-area">
+        {/* INTERACTIVE DEMO MODE WATERMARK BANNER */}
+        {owner.id === 'demo-owner' && (
+          <div className="demo-mode-top-banner">
+            <div className="dmtb-left">
+              <span className="demo-pill">LIVE DEMO MODE</span>
+              <span>Testing <strong>IronPeak Fitness Studio</strong> workspace with sample data.</span>
+            </div>
+            <div className="dmtb-right">
+              <button
+                type="button"
+                className="button button-whatsapp-sm"
+                onClick={() => {
+                  const msg = encodeURIComponent("Hi Ayush, I just test-drove the Forma Live Demo and I would like to purchase / request access for my gym workspace.")
+                  window.open(`https://wa.me/${import.meta.env.VITE_OWNER_WHATSAPP || '919999990001'}?text=${msg}`, '_blank')
+                }}
+              >
+                <MessageCircle size={14} />
+                <span>Request Real Workspace</span>
+              </button>
+              <button
+                type="button"
+                className="button button-secondary text-xs"
+                style={{ height: '28px', padding: '0 10px' }}
+                onClick={() => {
+                  setOwner(null)
+                  setGym(null)
+                }}
+              >
+                Exit Demo
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* TOPBAR (UNIFIED SINGLE SOURCE OF TRUTH) */}
         <header className="topbar">
           <div className="topbar-left">

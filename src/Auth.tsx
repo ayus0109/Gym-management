@@ -2,17 +2,61 @@ import { useState, type FormEvent } from 'react'
 import {
   Activity, AlertTriangle, ArrowRight, ArrowLeft, ArrowUpRight, Bell, CalendarDays,
   Check, CheckCircle2, ChevronRight, Dumbbell, Flame, LockKeyhole,
-  Mail, MapPin, Phone, ShieldCheck, Sparkles, Star, UserRound, Users,
-  Wallet, Zap
+  Mail, MapPin, MessageCircle, Phone, ShieldCheck, Sparkles, Star, UserRound, Users,
+  Wallet, X, Zap
 } from 'lucide-react'
 import { api, type GymDto, type OwnerDto } from './api'
 import TiltCard from './components/TiltCard'
+
+const OWNER_WHATSAPP = import.meta.env.VITE_OWNER_WHATSAPP || '919999990001'
 
 export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: GymDto) => void }) {
   const [page, setPage] = useState<'landing' | 'login' | 'register'>('landing')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState<'monthly' | 'quarterly' | 'annual'>('monthly')
+
+  // Lead capture / Request Access Modal
+  const [showRequestAccess, setShowRequestAccess] = useState(false)
+  const [requestSubmitted, setRequestSubmitted] = useState(false)
+  const [requestData, setRequestData] = useState({
+    name: '',
+    gymName: '',
+    city: '',
+    phone: '',
+    membersCount: '50 - 150 members',
+  })
+
+  function handleLaunchDemo() {
+    const demoOwner: OwnerDto = {
+      id: 'demo-owner',
+      name: 'Demo Gym Owner',
+      email: 'demo@forma.fit',
+      phone: '+91 99999 90001',
+    }
+    const demoGym: GymDto = {
+      id: 'demo-gym',
+      name: 'IronPeak Fitness Studio',
+      address: 'Plot 14, 100ft Road, Indiranagar, Bengaluru',
+      phone: '+91 99999 90001',
+      timezone: 'Asia/Kolkata',
+    }
+    onDone(demoOwner, demoGym)
+  }
+
+  function handleSendWhatsAppRequest(e: FormEvent) {
+    e.preventDefault()
+    const msg = `Hi Ayush, I am ${requestData.name.trim()} from ${requestData.gymName.trim()} (${requestData.city.trim()}, ~${requestData.membersCount}). I would like to request access / demo for the Forma Gym Management system.`
+    const waUrl = `https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(msg)}`
+
+    api('/leads/request-access', {
+      method: 'POST',
+      body: JSON.stringify(requestData),
+    }).catch(() => {})
+
+    window.open(waUrl, '_blank')
+    setRequestSubmitted(true)
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -27,6 +71,7 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
             email: values.email,
             password: values.password,
             gymName: values.gymName || undefined,
+            inviteCode: values.inviteCode || undefined,
           }),
         })
         onDone(result.owner, result.gym)
@@ -78,8 +123,8 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
               <button className="landing-login" onClick={() => setPage('login')}>
                 Sign In
               </button>
-              <button className="button button-primary hero-btn-glow" onClick={() => setPage('register')}>
-                Launch Workspace <ArrowRight size={15} />
+              <button className="button button-primary hero-btn-glow" onClick={() => setShowRequestAccess(true)}>
+                Request Access <ArrowRight size={15} />
               </button>
             </div>
           </div>
@@ -108,16 +153,18 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
             </p>
 
             <div className="hero-actions">
-              <button className="button button-primary hero-cta-btn" onClick={() => setPage('register')}>
-                <span>Start Free Workspace</span>
+              <button className="button button-primary hero-cta-btn" onClick={() => setShowRequestAccess(true)}>
+                <MessageCircle size={16} />
+                <span>Request Access / Book Demo</span>
                 <ArrowRight size={16} />
               </button>
               <button
                 className="button button-secondary hero-secondary-btn"
-                onClick={() => document.getElementById('landing-features')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={handleLaunchDemo}
+                title="Test-drive the live dashboard in a safe interactive demo sandbox"
               >
-                <span>Explore Capabilities</span>
-                <ChevronRight size={15} />
+                <Sparkles size={15} />
+                <span>Explore Live Demo</span>
               </button>
             </div>
 
@@ -320,8 +367,9 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
                 <li><Check size={16} /> Offline Cash & UPI Recording</li>
                 <li><Check size={16} /> Real-Time Analytics Dashboard</li>
               </ul>
-              <button className="button button-secondary pricing-btn" onClick={() => setPage('register')}>
-                Get Started
+              <button className="button button-secondary pricing-btn" onClick={() => setShowRequestAccess(true)}>
+                <MessageCircle size={15} />
+                <span>Request Access</span>
               </button>
             </TiltCard>
 
@@ -342,8 +390,10 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
                 <li><Check size={16} /> Live Floor Capacity Radar</li>
                 <li><Check size={16} /> Priority 24/7 Technical Support</li>
               </ul>
-              <button className="button button-primary pricing-btn hero-btn-glow" onClick={() => setPage('register')}>
-                Launch Elite Workspace <ArrowRight size={16} />
+              <button className="button button-primary pricing-btn hero-btn-glow" onClick={() => setShowRequestAccess(true)}>
+                <MessageCircle size={15} />
+                <span>Request Elite Workspace</span>
+                <ArrowRight size={16} />
               </button>
             </TiltCard>
           </div>
@@ -434,13 +484,37 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
 
         <form onSubmit={submit} className="auth-form-pro">
           {page === 'register' && (
-            <label className="field-label-pro">
-              <span>Gym / Studio Name (Optional)</span>
-              <div className="auth-input-pro">
-                <Dumbbell size={16} />
-                <input name="gymName" placeholder="My Gym Studio" />
-              </div>
-            </label>
+            <>
+              <label className="field-label-pro">
+                <span>Gym / Studio Name (Optional)</span>
+                <div className="auth-input-pro">
+                  <Dumbbell size={16} />
+                  <input name="gymName" placeholder="My Gym Studio" />
+                </div>
+              </label>
+
+              <label className="field-label-pro">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>VIP Access Code *</span>
+                  <button
+                    type="button"
+                    className="button-link-accent text-xs"
+                    onClick={() => setShowRequestAccess(true)}
+                  >
+                    Need a code? Request Access
+                  </button>
+                </div>
+                <div className="auth-input-pro">
+                  <ShieldCheck size={16} />
+                  <input
+                    name="inviteCode"
+                    required
+                    placeholder="e.g. FORMA2026"
+                    style={{ textTransform: 'uppercase' }}
+                  />
+                </div>
+              </label>
+            </>
           )}
 
           <label className="field-label-pro">
@@ -502,6 +576,136 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
         <span>•</span>
         <span>Built for gym owners who value craft</span>
       </footer>
+
+      {/* REQUEST ACCESS / LEAD CAPTURE MODAL */}
+      {showRequestAccess && (
+        <div className="modal-backdrop" onClick={() => setShowRequestAccess(false)}>
+          <div className="modal request-access-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-head">
+              <div>
+                <span className="modal-icon sage">
+                  <MessageCircle size={20} />
+                </span>
+                <h2>Request Gym Workspace Access</h2>
+                <p>
+                  Forma is currently onboarding selective fitness studios & gyms. Submit your details below to receive your VIP access code directly on WhatsApp.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => {
+                  setShowRequestAccess(false)
+                  setRequestSubmitted(false)
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {requestSubmitted ? (
+              <div className="request-success-box">
+                <div className="rs-icon">
+                  <CheckCircle2 size={36} color="#10b981" />
+                </div>
+                <h3>Request Opened in WhatsApp!</h3>
+                <p>
+                  We have pre-filled your access request message. Send it in WhatsApp to connect directly with Ayush. Once verified, you'll receive your private VIP Access Code to launch your workspace.
+                </p>
+                <div className="modal-actions" style={{ marginTop: '20px' }}>
+                  <button
+                    type="button"
+                    className="button button-primary"
+                    onClick={() => {
+                      setShowRequestAccess(false)
+                      setRequestSubmitted(false)
+                      setPage('register')
+                    }}
+                  >
+                    I Have an Access Code · Register Now
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSendWhatsAppRequest} className="request-access-form">
+                <div className="form-grid">
+                  <label className="field-label">
+                    <span>Your Name *</span>
+                    <input
+                      required
+                      placeholder="e.g. Rahul Verma"
+                      value={requestData.name}
+                      onChange={e => setRequestData({ ...requestData, name: e.target.value })}
+                      autoFocus
+                    />
+                  </label>
+                  <label className="field-label">
+                    <span>Gym / Studio Name *</span>
+                    <input
+                      required
+                      placeholder="e.g. IronPeak Fitness"
+                      value={requestData.gymName}
+                      onChange={e => setRequestData({ ...requestData, gymName: e.target.value })}
+                    />
+                  </label>
+                </div>
+
+                <div className="form-grid">
+                  <label className="field-label">
+                    <span>City / Location *</span>
+                    <input
+                      required
+                      placeholder="e.g. Mumbai, Pune, Delhi"
+                      value={requestData.city}
+                      onChange={e => setRequestData({ ...requestData, city: e.target.value })}
+                    />
+                  </label>
+                  <label className="field-label">
+                    <span>WhatsApp Number *</span>
+                    <input
+                      required
+                      placeholder="+91 98765 43210"
+                      value={requestData.phone}
+                      onChange={e => setRequestData({ ...requestData, phone: e.target.value })}
+                    />
+                  </label>
+                </div>
+
+                <label className="field-label">
+                  <span>Current Active Members</span>
+                  <select
+                    value={requestData.membersCount}
+                    onChange={e => setRequestData({ ...requestData, membersCount: e.target.value })}
+                  >
+                    <option value="Under 50 members">Under 50 members</option>
+                    <option value="50 - 150 members">50 – 150 members</option>
+                    <option value="150 - 300 members">150 – 300 members</option>
+                    <option value="300+ members">300+ members</option>
+                  </select>
+                </label>
+
+                <div className="modal-actions" style={{ marginTop: '18px' }}>
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => setShowRequestAccess(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="button button-whatsapp"
+                    style={{ padding: '0 18px', gap: '8px' }}
+                  >
+                    <MessageCircle size={16} />
+                    <span>Send Request on WhatsApp</span>
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   )
 }

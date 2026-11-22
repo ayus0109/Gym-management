@@ -16,6 +16,7 @@ const registerSchema = z.object({
   phone: z.string().min(5).max(30).optional(),
   password: z.string().min(6).max(128),
   gymName: z.string().trim().min(1).max(120).optional(),
+  inviteCode: z.string().trim().optional(),
 })
 const loginSchema = z.object({ email: z.string().trim().email(), password: z.string().min(1).max(128) })
 const gymSchema = z.object({ name: z.string().trim().min(2).max(120), address: z.string().trim().min(4).max(400), phone: z.string().min(8).max(30) })
@@ -28,9 +29,29 @@ function tenantId(req: AuthenticatedRequest) { if (!req.gymId) throw new Error('
 function httpError(res: Response, status: number, message: string) { return res.status(status).json({ error: message }) }
 function dateLabel(date: Date) { return DateTime.fromJSDate(date, { zone: 'utc' }).setZone(APP_TIMEZONE).toFormat('dd LLL yyyy') }
 
+apiRouter.post('/leads/request-access', async (req, res) => {
+  try {
+    const { name, gymName, city, phone, membersCount } = req.body || {}
+    console.log(`[Lead Capture] New Access Request: ${name} (${gymName}, ${city}) - Phone: ${phone}, Members: ${membersCount}`)
+    res.json({ success: true, message: 'Access request logged successfully' })
+  } catch (err) {
+    res.json({ success: true })
+  }
+})
+
 apiRouter.post('/auth/register', async (req, res, next) => {
   try {
     const data = registerSchema.parse(req.body)
+
+    // VIP Invite / Access Code Gate (Ensures only approved gym owners can register)
+    const VALID_CODES = ['FORMA2026', 'GYM2026', 'VIPACCESS', 'AYUSH2026']
+    const envCode = process.env.INVITE_CODE?.trim().toUpperCase()
+    if (envCode) VALID_CODES.push(envCode)
+    const submittedCode = (data.inviteCode || '').trim().toUpperCase()
+    if (!VALID_CODES.includes(submittedCode)) {
+      return httpError(res, 403, 'A valid VIP Access Code is required to create a workspace. Please click "Request Access" to receive your invite.')
+    }
+
     const email = data.email.toLowerCase()
     const name = data.name && data.name.trim().length > 0 ? data.name.trim() : email.split('@')[0]
     const phone = data.phone ? normalizePhone(data.phone) : '+910000000000'

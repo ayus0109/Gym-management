@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import {
   Activity, AlertTriangle, ArrowRight, ArrowLeft, ArrowUpRight, Bell, CalendarDays,
   Check, CheckCircle2, ChevronRight, Dumbbell, Flame, LockKeyhole,
@@ -26,6 +26,11 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
     phone: '',
     membersCount: '50 - 150 members',
   })
+
+  // Pre-warm backend immediately on page load so Render wakes up before user signs in
+  useEffect(() => {
+    fetch('/api/health').catch(() => {})
+  }, [])
 
   function handleLaunchDemo() {
     const demoOwner: OwnerDto = {

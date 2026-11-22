@@ -67,15 +67,42 @@ export type BulkImportMember = {
 }
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`/api${path}`, {
-    ...options,
-    credentials: 'include',
-    headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers }
-  })
-  if (response.status === 204) return undefined as T
-  const data = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(data.error ?? `Request failed (${response.status}).`)
-  return data as T
+  const isIdempotent = !options.method || options.method === 'GET' || options.method === 'POST'
+  const maxRetries = isIdempotent ? 3 : 1
+  let attempt = 0
+
+  while (true) {
+    attempt++
+    try {
+      const response = await fetch(`/api${path}`, {
+        ...options,
+        credentials: 'include',
+        headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers }
+      })
+      if (response.status === 204) return undefined as T
+      const data = await response.json().catch(() => ({}))
+
+      // 502 Bad Gateway / 504 Gateway Timeout happens when Render free tier is waking up
+      if ((response.status === 502 || response.status === 503 || response.status === 504) && attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 2500))
+        continue
+      }
+
+      if (!response.ok) {
+        if (response.status === 502 || response.status === 504) {
+          throw new Error('The backend server is waking up from standby mode. Please wait 10 seconds and try again.')
+        }
+        throw new Error(data.error ?? `Request failed (${response.status}).`)
+      }
+      return data as T
+    } catch (err: any) {
+      if (attempt < maxRetries && (err?.message?.includes('Failed to fetch') || err?.message?.includes('NetworkError'))) {
+        await new Promise(resolve => setTimeout(resolve, 2500))
+        continue
+      }
+      throw err
+    }
+  }
 }
 
 export const money = (paise: number) =>

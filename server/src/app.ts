@@ -4,6 +4,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import { resolve } from 'node:path'
+import { prisma } from './db.js'
 import { apiRouter, razorpayWebhook } from './routes.js'
 import { requireOwner } from './security.js'
 
@@ -16,6 +17,21 @@ app.post('/api/webhooks/razorpay', express.raw({ type: 'application/json', limit
 app.use(express.json({ limit: '100kb' }))
 app.use(cookieParser())
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
+app.get('/api/health/db', async (_req, res) => {
+  try {
+    const hasDbUrl = Boolean(process.env.DATABASE_URL)
+    const dbUrlMasked = process.env.DATABASE_URL ? process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@') : 'NOT_SET'
+    await prisma.$queryRaw`SELECT 1 as connected`
+    res.json({ status: 'ok', database: 'connected', hasDbUrl, dbUrl: dbUrlMasked })
+  } catch (err: any) {
+    res.status(503).json({
+      status: 'error',
+      database: 'disconnected',
+      hasDbUrl: Boolean(process.env.DATABASE_URL),
+      error: err?.message || String(err)
+    })
+  }
+})
 app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 12, standardHeaders: 'draft-8', legacyHeaders: false }))
 app.use('/api', apiRouter)
 if (process.env.NODE_ENV === 'production') {
@@ -31,6 +47,6 @@ const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   if (error?.name === 'ZodError') return res.status(400).json({ error: 'Please check the submitted information.', fields: error.issues })
   console.error(error)
   if (res.headersSent) return
-  res.status(500).json({ error: process.env.NODE_ENV === 'production' ? 'Something went wrong.' : String(error?.message ?? 'Unexpected server error') })
+  res.status(500).json({ error: String(error?.message ?? 'Unexpected server error') })
 }
 app.use(errorHandler)

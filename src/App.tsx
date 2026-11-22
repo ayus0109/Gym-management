@@ -136,11 +136,20 @@ export function App() {
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('forma-theme') === 'dark')
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('forma-theme')
+      if (saved) return saved === 'dark'
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+    return false
+  })
 
   useEffect(() => {
-    document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'
-    localStorage.setItem('forma-theme', darkMode ? 'dark' : 'light')
+    const theme = darkMode ? 'dark' : 'light'
+    document.documentElement.dataset.theme = theme
+    document.documentElement.style.colorScheme = theme
+    localStorage.setItem('forma-theme', theme)
   }, [darkMode])
 
   // Browser Navigation & History Handling
@@ -362,14 +371,16 @@ export function App() {
             <span className="brand-title">{gym.name}</span>
             <span className="brand-sub">Gym Workspace</span>
           </div>
-          <button
-            type="button"
-            className="icon-button close-sidebar-btn"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close sidebar"
-          >
-            <X size={18} />
-          </button>
+          {sidebarOpen && (
+            <button
+              type="button"
+              className="icon-button close-sidebar-btn"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Close sidebar"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         <nav className="nav-list">

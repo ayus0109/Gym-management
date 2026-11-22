@@ -7,10 +7,12 @@
   box-sizing: border-box;
 }
 
-:root {
+:root,
+html[data-theme="light"] {
+  color-scheme: light;
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #0f172a;
-  background: #f8fafc;
+  color: var(--ink-primary);
+  background-color: var(--bg-primary);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -27,6 +29,14 @@
   --ink-primary: #0f172a;
   --ink-secondary: #475569;
   --ink-muted: #64748b;
+
+  /* V3 Extensions compatibility aliases */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --surface-card: #ffffff;
+  --surface-bg: #f8fafc;
+  --surface-prominent: #f1f5f9;
 
   /* Accents */
   --accent-primary: #0f172a;
@@ -48,7 +58,12 @@
   --shadow-glass: 0 10px 30px rgba(0, 0, 0, 0.04);
 }
 
-html[data-theme="dark"] {
+html[data-theme="dark"],
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  color: var(--ink-primary);
+  background-color: var(--bg-primary);
+
   /* Neutral Obsidian / Zinc Scale (Linear / Vercel Grade) */
   --bg-primary: #09090b;
   --bg-surface: #0e0f12;
@@ -60,6 +75,14 @@ html[data-theme="dark"] {
   --ink-primary: #f4f4f5;
   --ink-secondary: #a1a1aa;
   --ink-muted: #71717a;
+
+  /* V3 Extensions compatibility aliases */
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --surface-card: #14151a;
+  --surface-bg: #09090b;
+  --surface-prominent: rgba(255, 255, 255, 0.08);
 
   /* Accents */
   --accent-primary: #ffffff;
@@ -87,8 +110,32 @@ body {
   overflow-x: hidden;
 }
 
-button, input, select {
+button, input, select, textarea {
   font: inherit;
+  color: inherit;
+}
+
+input, select, textarea {
+  color: var(--ink-primary);
+  background-color: var(--bg-surface);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--ink-muted);
+  opacity: 0.8;
+}
+
+select option {
+  background-color: var(--bg-card);
+  color: var(--ink-primary);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--ink-primary);
+}
+
+p, span, label, th, td {
+  color: inherit;
 }
 
 button {
@@ -293,7 +340,7 @@ html[data-theme="dark"] .brand-mark {
 }
 
 .close-sidebar-btn {
-  display: none;
+  display: none !important;
 }
 
 .nav-list {
@@ -3815,7 +3862,11 @@ html[data-theme="dark"] .auth-back-pro {
     transform: translateX(0);
     box-shadow: var(--shadow-lg);
   }
-  .close-nav { display: inline-grid; }
+  .close-nav,
+  .sidebar.sidebar-open .close-sidebar-btn {
+    display: inline-grid !important;
+    margin-left: auto;
+  }
   .scrim {
     display: block;
     position: fixed;

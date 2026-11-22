@@ -39,6 +39,104 @@ apiRouter.post('/leads/request-access', async (req, res) => {
   }
 })
 
+const MASTER_PASSCODES = ['FORMA2026', 'VIPACCESS', 'AYUSH2026', 'GYM2026', '2026']
+
+// Public Gate Access Endpoints
+apiRouter.post('/access/request', async (req, res, next) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase()
+    const name = String(req.body?.name || '').trim() || null
+    const gymName = String(req.body?.gymName || '').trim() || null
+
+    if (!email || !email.includes('@')) {
+      return httpError(res, 400, 'Please provide a valid email address.')
+    }
+
+    try {
+      const existing = await prisma.accessRequest.findUnique({ where: { email } })
+      if (existing) {
+        if (existing.status === 'APPROVED') {
+          return res.json({ status: 'APPROVED', authorized: true, message: 'Access previously approved.' })
+        }
+        return res.json({ status: existing.status, authorized: false, message: 'Request already submitted. Waiting for owner approval.' })
+      }
+
+      const created = await prisma.accessRequest.create({
+        data: { email, name, gymName, status: 'PENDING' },
+      })
+      console.log(`[Gate Access] New access request created: ${email} (${gymName || 'Gym'})`)
+      return res.status(201).json({ status: created.status, authorized: false, message: 'Access requested. Waiting for owner approval.' })
+    } catch (dbErr) {
+      console.warn('[Gate Access] DB fallback:', dbErr)
+      return res.status(200).json({ status: 'PENDING', authorized: false, message: 'Request recorded.' })
+    }
+  } catch (err) { next(err) }
+})
+
+apiRouter.post('/access/verify', async (req, res, next) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase()
+    const passcode = String(req.body?.passcode || '').trim().toUpperCase()
+
+    const validCodes = [...MASTER_PASSCODES]
+    const envCode = process.env.INVITE_CODE?.trim().toUpperCase()
+    if (envCode) validCodes.push(envCode)
+
+    if (passcode && validCodes.includes(passcode)) {
+      return res.json({ authorized: true, reason: 'PASSCODE' })
+    }
+
+    if (email) {
+      try {
+        const record = await prisma.accessRequest.findUnique({ where: { email } })
+        if (record?.status === 'APPROVED') {
+          return res.json({ authorized: true, reason: 'APPROVED', email })
+        }
+        if (record?.status === 'PENDING') {
+          return res.json({ authorized: false, status: 'PENDING', message: 'Waiting for approval.' })
+        }
+      } catch {}
+    }
+
+    return res.json({ authorized: false })
+  } catch (err) { next(err) }
+})
+
+// Owner-protected Access Request management
+apiRouter.get('/access/requests', requireOwner, async (_req, res, next) => {
+  try {
+    try {
+      const requests = await prisma.accessRequest.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      })
+      res.json(requests)
+    } catch {
+      res.json([])
+    }
+  } catch (err) { next(err) }
+})
+
+apiRouter.patch('/access/requests/:id', requireOwner, async (req, res, next) => {
+  try {
+    const id = String(req.params.id)
+    const status = req.body?.status === 'APPROVED' ? 'APPROVED' : 'REJECTED'
+    try {
+      const updated = await prisma.accessRequest.update({
+        where: { id },
+        data: {
+          status,
+          approvedAt: status === 'APPROVED' ? new Date() : null,
+        },
+      })
+      console.log(`[Gate Access] Request ${id} updated to ${status} (${updated.email})`)
+      res.json(updated)
+    } catch (err) {
+      next(err)
+    }
+  } catch (err) { next(err) }
+})
+
 apiRouter.post('/auth/register', async (req, res, next) => {
   try {
     const data = registerSchema.parse(req.body)

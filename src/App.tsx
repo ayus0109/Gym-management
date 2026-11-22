@@ -17,15 +17,19 @@ import {
   Plus,
   Search,
   Settings,
+  ShieldCheck,
   Sun,
   Users,
   X,
 } from 'lucide-react'
 import AuthFlow from './Auth'
+import DeploymentGate from './components/common/DeploymentGate'
+import AccessApprovalsModal from './components/common/AccessApprovalsModal'
 import {
   api,
   money,
   shortDate,
+  type AccessRequestDto,
   type DashboardDto,
   type GymDto,
   type IntegrationDto,
@@ -115,6 +119,23 @@ export function App() {
     }
     return true
   })
+  const [gateUnlocked, setGateUnlocked] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    if (localStorage.getItem('forma_auth_session')) return true
+    if (localStorage.getItem('forma_gate_unlocked') === 'true') return true
+
+    const params = new URLSearchParams(window.location.search)
+    const pass = (params.get('pass') || params.get('access') || params.get('key') || '').trim().toUpperCase()
+    const validCodes = ['FORMA2026', 'VIPACCESS', 'AYUSH2026', 'GYM2026', '2026']
+    if (pass && validCodes.includes(pass)) {
+      localStorage.setItem('forma_gate_unlocked', 'true')
+      return true
+    }
+
+    return false
+  })
+  const [accessModalOpen, setAccessModalOpen] = useState(false)
+  const [pendingAccessCount, setPendingAccessCount] = useState(0)
   const [active, setActive] = useState('Overview')
   const [previousTab, setPreviousTab] = useState<string | null>(null)
   const [navHistory, setNavHistory] = useState<string[]>(['Overview'])
@@ -260,6 +281,17 @@ export function App() {
       })
       .finally(() => setAuthLoading(false))
   }, [])
+
+  // Sync pending deployment access requests for workspace owner
+  useEffect(() => {
+    if (owner && owner.id !== 'demo-owner') {
+      api<AccessRequestDto[]>('/access/requests')
+        .then(data => {
+          setPendingAccessCount(data.filter(r => r.status === 'PENDING').length)
+        })
+        .catch(() => {})
+    }
+  }, [owner])
 
   // Load Data
   const loadData = async () => {
@@ -617,6 +649,11 @@ export function App() {
   // Calculate upcoming renewals badge count
   const renewalsDueCount = dashboard?.metrics?.expiringSoon ?? 0
 
+  // Deployment Protection Gate (Vercel-style institutional gate)
+  if (!gateUnlocked) {
+    return <DeploymentGate onUnlock={() => setGateUnlocked(true)} />
+  }
+
   if (authLoading) {
     return (
       <div className="auth-loading-screen">
@@ -818,6 +855,21 @@ export function App() {
           </div>
 
           <div className="topbar-right">
+            {owner?.id !== 'demo-owner' && (
+              <button
+                type="button"
+                className="icon-button topbar-access-btn"
+                onClick={() => setAccessModalOpen(true)}
+                title="Deployment Access Approvals"
+                aria-label="Deployment Access Approvals"
+              >
+                <ShieldCheck size={18} />
+                {pendingAccessCount > 0 && (
+                  <span className="topbar-access-count-badge">{pendingAccessCount}</span>
+                )}
+              </button>
+            )}
+
             <button
               type="button"
               className="icon-button theme-toggle"
@@ -1041,6 +1093,12 @@ export function App() {
           onToast={showToast}
         />
       )}
+
+      <AccessApprovalsModal
+        isOpen={accessModalOpen}
+        onClose={() => setAccessModalOpen(false)}
+        onRequestsUpdated={count => setPendingAccessCount(count)}
+      />
     </div>
   )
 }

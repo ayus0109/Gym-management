@@ -56,6 +56,16 @@ export type IntegrationDto = {
   whatsappTemplateLanguage: string
 }
 
+export type AccessRequestDto = {
+  id: string
+  email: string
+  name: string | null
+  gymName: string | null
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  approvedAt: string | null
+  createdAt: string
+}
+
 export type BulkImportMember = {
   name: string
   phone: string

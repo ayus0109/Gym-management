@@ -10,7 +10,13 @@ import { APP_TIMEZONE, expiryFor, normalizePhone, paiseFromRupees, reminderTimeF
 import { createRazorpayPaymentLink, sendRenewalTemplate } from './providers.js'
 
 export const apiRouter = Router()
-const registerSchema = z.object({ name: z.string().trim().min(2).max(80), email: z.string().trim().email().max(254), phone: z.string().min(8).max(30), password: z.string().min(10).max(128) })
+const registerSchema = z.object({
+  name: z.string().trim().min(1).max(80).optional(),
+  email: z.string().trim().email().max(254),
+  phone: z.string().min(5).max(30).optional(),
+  password: z.string().min(6).max(128),
+  gymName: z.string().trim().min(1).max(120).optional(),
+})
 const loginSchema = z.object({ email: z.string().trim().email(), password: z.string().min(1).max(128) })
 const gymSchema = z.object({ name: z.string().trim().min(2).max(120), address: z.string().trim().min(4).max(400), phone: z.string().min(8).max(30) })
 const planSchema = z.object({ name: z.string().trim().min(2).max(80), durationDays: z.coerce.number().int().min(1).max(3650), price: z.coerce.number().nonnegative(), description: z.string().trim().max(500).optional().nullable(), isActive: z.boolean().optional() })
@@ -26,18 +32,40 @@ apiRouter.post('/auth/register', async (req, res, next) => {
   try {
     const data = registerSchema.parse(req.body)
     const email = data.email.toLowerCase()
-    const phone = normalizePhone(data.phone)
+    const name = data.name && data.name.trim().length > 0 ? data.name.trim() : email.split('@')[0]
+    const phone = data.phone ? normalizePhone(data.phone) : '+910000000000'
+    const gymName = data.gymName && data.gymName.trim().length > 0 ? data.gymName.trim() : `${name}'s Gym`
+
     const existing = await prisma.owner.findUnique({ where: { email }, select: { id: true } })
     if (existing) return httpError(res, 409, 'An account with this email already exists.')
     const passwordHash = await bcrypt.hash(data.password, 12)
     const token = newSessionToken()
-    const owner = await prisma.$transaction(async tx => {
-      const created = await tx.owner.create({ data: { name: data.name, email, phone, passwordHash }, select: { id: true, name: true, email: true, phone: true } })
-      await tx.session.create({ data: { ownerId: created.id, tokenHash: sha256(token), expiresAt: new Date(Date.now() + 14 * 86400000) } })
-      return created
+    const { owner, gym } = await prisma.$transaction(async tx => {
+      const createdOwner = await tx.owner.create({
+        data: { name, email, phone, passwordHash },
+        select: { id: true, name: true, email: true, phone: true },
+      })
+      await tx.session.create({
+        data: {
+          ownerId: createdOwner.id,
+          tokenHash: sha256(token),
+          expiresAt: new Date(Date.now() + 14 * 86400000),
+        },
+      })
+      const createdGym = await tx.gym.create({
+        data: {
+          ownerId: createdOwner.id,
+          name: gymName,
+          address: 'Fitness Studio',
+          phone,
+          timezone: APP_TIMEZONE,
+        },
+        select: { id: true, name: true, address: true, phone: true, timezone: true },
+      })
+      return { owner: createdOwner, gym: createdGym }
     })
     setSessionCookie(res, token)
-    res.status(201).json({ owner: cleanOwner(owner), gym: null })
+    res.status(201).json({ owner: cleanOwner(owner), gym })
   } catch (error) { next(error) }
 })
 
@@ -49,7 +77,19 @@ apiRouter.post('/auth/login', async (req, res, next) => {
     const token = newSessionToken()
     await prisma.session.create({ data: { ownerId: owner.id, tokenHash: sha256(token), expiresAt: new Date(Date.now() + 14 * 86400000) } })
     setSessionCookie(res, token)
-    const gym = await prisma.gym.findUnique({ where: { ownerId: owner.id }, select: { id: true, name: true, address: true, phone: true, timezone: true } })
+    let gym = await prisma.gym.findUnique({ where: { ownerId: owner.id }, select: { id: true, name: true, address: true, phone: true, timezone: true } })
+    if (!gym) {
+      gym = await prisma.gym.create({
+        data: {
+          ownerId: owner.id,
+          name: `${owner.name}'s Gym`,
+          address: 'Fitness Studio',
+          phone: owner.phone || '+910000000000',
+          timezone: APP_TIMEZONE,
+        },
+        select: { id: true, name: true, address: true, phone: true, timezone: true },
+      })
+    }
     res.json({ owner: cleanOwner(owner), gym })
   } catch (error) { next(error) }
 })
@@ -58,7 +98,27 @@ apiRouter.post('/auth/logout', requireOwner, async (req: AuthenticatedRequest, r
   try { const token = req.cookies?.forma_session as string | undefined; if (token) await prisma.session.deleteMany({ where: { tokenHash: sha256(token), ownerId: req.ownerId } }); clearSessionCookie(res); res.status(204).end() } catch (error) { next(error) }
 })
 apiRouter.get('/auth/me', requireOwner, async (req: AuthenticatedRequest, res, next) => {
-  try { const owner = await prisma.owner.findUnique({ where: { id: req.ownerId }, select: { id: true, name: true, email: true, phone: true } }); const gym = req.gymId ? await prisma.gym.findUnique({ where: { id: req.gymId }, select: { id: true, name: true, address: true, phone: true, timezone: true } }) : null; res.json({ owner, gym }) } catch (error) { next(error) }
+  try {
+    const owner = await prisma.owner.findUnique({ where: { id: req.ownerId }, select: { id: true, name: true, email: true, phone: true } })
+    if (!owner) return httpError(res, 401, 'Please sign in.')
+    let gym = req.gymId ? await prisma.gym.findUnique({ where: { id: req.gymId }, select: { id: true, name: true, address: true, phone: true, timezone: true } }) : null
+    if (!gym) {
+      gym = await prisma.gym.findUnique({ where: { ownerId: owner.id }, select: { id: true, name: true, address: true, phone: true, timezone: true } })
+      if (!gym) {
+        gym = await prisma.gym.create({
+          data: {
+            ownerId: owner.id,
+            name: `${owner.name}'s Gym`,
+            address: 'Fitness Studio',
+            phone: owner.phone || '+910000000000',
+            timezone: APP_TIMEZONE,
+          },
+          select: { id: true, name: true, address: true, phone: true, timezone: true },
+        })
+      }
+    }
+    res.json({ owner, gym })
+  } catch (error) { next(error) }
 })
 
 apiRouter.use('/gym', requireOwner)

@@ -2922,6 +2922,20 @@ html[data-theme="dark"] .expiry-preview strong {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 32px;
+}
+
+.landing-brand {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 800 20px var(--font-serif);
+  letter-spacing: -0.8px;
+  color: var(--ink-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
 }
 
 .landing-nav-links {
@@ -3584,8 +3598,8 @@ html[data-theme="dark"] .pricing-features svg {
 }
 
 html[data-theme="dark"] .auth-icon-badge {
-  background: rgba(212, 255, 0, 0.15);
-  color: var(--accent-lime);
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
 }
 
 .auth-kicker {
@@ -5093,10 +5107,14 @@ html[data-theme="dark"] .auth-back-pro {
 }
 
 .hero-badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent-lime);
+  position: relative;
+  width: 8px;
+  height: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 4px;
 }
 
 .spatial-dumbbell-icon {
@@ -5143,15 +5161,26 @@ html[data-theme="dark"] .auth-back-pro {
 }
 
 .brand-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  padding: 2px 5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
   border-radius: 4px;
-  background: var(--accent-lime);
-  color: #0b0f0c;
-  margin-left: 6px;
-  vertical-align: 3px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  margin-left: 8px;
+  line-height: 1.2;
+  vertical-align: middle;
+}
+
+html[data-theme="dark"] .brand-tag {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .error-chip {
@@ -5174,7 +5203,7 @@ html[data-theme="dark"] .auth-back-pro {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent-lime);
+  background: #10b981;
 }
 
 .radar-ping {
@@ -5182,6 +5211,17 @@ html[data-theme="dark"] .auth-back-pro {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: rgba(22, 163, 74, 0.4);
+  background: rgba(16, 185, 129, 0.35);
   animation: radarPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes radarPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
 }

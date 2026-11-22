@@ -8,9 +8,8 @@ import {
 import { api, type GymDto, type OwnerDto } from './api'
 import TiltCard from './components/TiltCard'
 
-export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: GymDto | null) => void }) {
-  const [page, setPage] = useState<'landing' | 'login' | 'register' | 'setup'>('landing')
-  const [owner, setOwner] = useState<OwnerDto | null>(null)
+export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: GymDto) => void }) {
+  const [page, setPage] = useState<'landing' | 'login' | 'register'>('landing')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState<'monthly' | 'quarterly' | 'annual'>('monthly')
@@ -22,57 +21,31 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
     const values = Object.fromEntries(new FormData(event.currentTarget).entries())
     try {
       if (page === 'register') {
-        if (values.password !== values.confirmPassword) {
-          throw new Error('Your passwords do not match.')
-        }
-        const result = await api<{ owner: OwnerDto; gym: GymDto | null }>('/auth/register', {
+        const result = await api<{ owner: OwnerDto; gym: GymDto }>('/auth/register', {
           method: 'POST',
           body: JSON.stringify({
-            name: values.name,
             email: values.email,
-            phone: values.phone,
             password: values.password,
+            gymName: values.gymName || undefined,
           }),
         })
-        setOwner(result.owner)
-        setPage('setup')
-        return
-      }
-      if (page === 'login') {
-        const result = await api<{ owner: OwnerDto; gym: GymDto | null }>('/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ email: values.email, password: values.password }),
-        })
-        if (!result.gym) {
-          setOwner(result.owner)
-          setPage('setup')
-          return
-        }
         onDone(result.owner, result.gym)
         return
       }
-      const gym = await api<GymDto>('/gym', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: values.gymName,
-          address: values.address,
-          phone: values.gymPhone,
-        }),
-      })
-      if (owner) {
-        onDone(owner, gym)
-      } else {
-        const result = await api<{ owner: OwnerDto }>('/auth/me')
-        onDone(result.owner, gym)
+      if (page === 'login') {
+        const result = await api<{ owner: OwnerDto; gym: GymDto }>('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email: values.email, password: values.password }),
+        })
+        onDone(result.owner, result.gym)
+        return
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Please try again.')
+      setError(e instanceof Error ? e.message : 'Please check your credentials and try again.')
     } finally {
       setBusy(false)
     }
   }
-
-  const setup = page === 'setup'
 
   if (page === 'landing') {
     return (
@@ -85,7 +58,7 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
         {/* Floating Glass Header */}
         <header className="landing-header">
           <div className="landing-header-inner">
-            <div className="auth-brand" onClick={() => setPage('landing')} style={{ cursor: 'pointer' }}>
+            <div className="landing-brand" onClick={() => setPage('landing')} style={{ cursor: 'pointer' }}>
               <div className="brand-mark">
                 <Activity size={20} strokeWidth={2.6} />
               </div>
@@ -442,115 +415,55 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
 
       <TiltCard maxTilt={5} className="auth-card-pro">
         <div className="auth-icon-badge">
-          {setup ? <Dumbbell size={22} /> : page === 'register' ? <UserRound size={22} /> : <LockKeyhole size={22} />}
+          {page === 'register' ? <UserRound size={22} /> : <LockKeyhole size={22} />}
         </div>
 
         <p className="auth-kicker">
-          {setup ? 'STEP 2 / 2 · WORKSPACE SETUP' : page === 'register' ? 'GET STARTED WITH FORMA' : 'SECURE SIGN IN'}
+          {page === 'register' ? 'GET STARTED' : 'SECURE SIGN IN'}
         </p>
 
         <h1 className="auth-heading">
-          {setup ? 'Configure your gym space' : page === 'register' ? 'Create owner account' : 'Welcome back to Forma'}
+          {page === 'register' ? 'Create owner account' : 'Welcome back to Forma'}
         </h1>
 
         <p className="auth-subtitle">
-          {setup
-            ? 'Set your gym details so members, receipts, and reminder notifications carry your branding.'
-            : page === 'register'
-            ? 'Access your unified gym management console, member ledger, and payment tracking.'
+          {page === 'register'
+            ? 'Enter your Gmail and password to launch your gym workspace instantly.'
             : 'Enter your credentials to return to your gym workspace.'}
         </p>
 
         <form onSubmit={submit} className="auth-form-pro">
           {page === 'register' && (
-            <>
-              <label className="field-label-pro">
-                <span>Full Name</span>
-                <div className="auth-input-pro">
-                  <UserRound size={16} />
-                  <input name="name" required minLength={2} placeholder="Alex Morgan" autoFocus />
-                </div>
-              </label>
-
-              <label className="field-label-pro">
-                <span>Direct Phone Number</span>
-                <div className="auth-input-pro">
-                  <Phone size={16} />
-                  <input name="phone" required placeholder="+91 98765 43210" />
-                </div>
-              </label>
-            </>
-          )}
-
-          {page !== 'setup' && (
             <label className="field-label-pro">
-              <span>Email Address</span>
+              <span>Gym / Studio Name (Optional)</span>
               <div className="auth-input-pro">
-                <Mail size={16} />
-                <input name="email" type="email" required placeholder="owner@gymname.com" autoFocus={page === 'login'} />
+                <Dumbbell size={16} />
+                <input name="gymName" placeholder="My Gym Studio" />
               </div>
             </label>
           )}
 
-          {page !== 'setup' && (
-            <label className="field-label-pro">
-              <span>Password</span>
-              <div className="auth-input-pro">
-                <LockKeyhole size={16} />
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  minLength={page === 'register' ? 10 : 1}
-                  placeholder={page === 'register' ? 'At least 10 characters' : 'Enter your password'}
-                />
-              </div>
-            </label>
-          )}
+          <label className="field-label-pro">
+            <span>Email Address</span>
+            <div className="auth-input-pro">
+              <Mail size={16} />
+              <input name="email" type="email" required placeholder="owner@gmail.com" autoFocus />
+            </div>
+          </label>
 
-          {page === 'register' && (
-            <label className="field-label-pro">
-              <span>Confirm Password</span>
-              <div className="auth-input-pro">
-                <LockKeyhole size={16} />
-                <input
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  minLength={10}
-                  placeholder="Repeat your password"
-                />
-              </div>
-            </label>
-          )}
-
-          {setup && (
-            <>
-              <label className="field-label-pro">
-                <span>Gym / Fitness Studio Name</span>
-                <div className="auth-input-pro">
-                  <Dumbbell size={16} />
-                  <input name="gymName" required minLength={2} placeholder="Northstar Fitness Studio" autoFocus />
-                </div>
-              </label>
-
-              <label className="field-label-pro">
-                <span>Physical Facility Address</span>
-                <div className="auth-input-pro">
-                  <MapPin size={16} />
-                  <input name="address" required minLength={4} placeholder="Plot 14, Ring Road, Indiranagar, Bengaluru" />
-                </div>
-              </label>
-
-              <label className="field-label-pro">
-                <span>Gym Contact Number</span>
-                <div className="auth-input-pro">
-                  <Phone size={16} />
-                  <input name="gymPhone" required placeholder="+91 80 4567 8900" />
-                </div>
-              </label>
-            </>
-          )}
+          <label className="field-label-pro">
+            <span>Password</span>
+            <div className="auth-input-pro">
+              <LockKeyhole size={16} />
+              <input
+                name="password"
+                type="password"
+                required
+                minLength={6}
+                placeholder="Enter your password (min 6 characters)"
+              />
+            </div>
+          </label>
 
           {error && (
             <div className="auth-error-pro" role="alert">
@@ -560,36 +473,23 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
           )}
 
           <button className="button button-primary auth-submit-pro hero-btn-glow" disabled={busy}>
-            <span>{busy ? 'Authenticating…' : setup ? 'Launch Gym Workspace' : page === 'register' ? 'Create Account' : 'Sign In'}</span>
+            <span>{busy ? 'Authenticating…' : page === 'register' ? 'Launch Gym Workspace' : 'Sign In'}</span>
             <ArrowRight size={16} />
           </button>
         </form>
 
-        {!setup && (
-          <div className="auth-switch-pro">
-            {page === 'login' ? 'New to Forma?' : 'Already have an account?'}
-            <button
-              onClick={() => {
-                setError('')
-                setPage(page === 'login' ? 'register' : 'login')
-              }}
-            >
-              {page === 'login' ? 'Create an account' : 'Sign in here'}
-            </button>
-          </div>
-        )}
-
-        {setup && (
+        <div className="auth-switch-pro">
+          {page === 'login' ? 'New to Forma?' : 'Already have an account?'}
           <button
-            className="auth-back-pro"
+            type="button"
             onClick={() => {
               setError('')
-              setPage('login')
+              setPage(page === 'login' ? 'register' : 'login')
             }}
           >
-            <ArrowLeft size={14} /> Back to sign in
+            {page === 'login' ? 'Create an account' : 'Sign in here'}
           </button>
-        )}
+        </div>
 
         <div className="auth-footnote-pro">
           <ShieldCheck size={14} />

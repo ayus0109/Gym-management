@@ -558,6 +558,79 @@ html[data-theme="dark"] .icon-button:hover {
   display: none;
 }
 
+.history-nav-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.topbar-nav-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.topbar-nav-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--ink-primary);
+  border-color: var(--border-focus);
+}
+
+html[data-theme="dark"] .topbar-nav-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink-primary);
+}
+
+.topbar-previous-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.09);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #10b981;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.topbar-previous-btn:hover {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: #10b981;
+  transform: translateY(-1px);
+}
+
+html[data-theme="dark"] .topbar-previous-btn {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #34d399;
+}
+
+html[data-theme="dark"] .topbar-previous-btn:hover {
+  background: rgba(16, 185, 129, 0.24);
+}
+
+.request-info-pill {
+  margin: 14px 0 18px;
+  padding: 10px 14px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  text-align: center;
+}
+
 .topbar-back-btn {
   display: inline-flex;
   align-items: center;

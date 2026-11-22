@@ -31,8 +31,8 @@ function dateLabel(date: Date) { return DateTime.fromJSDate(date, { zone: 'utc' 
 
 apiRouter.post('/leads/request-access', async (req, res) => {
   try {
-    const { name, gymName, city, phone, membersCount } = req.body || {}
-    console.log(`[Lead Capture] New Access Request: ${name} (${gymName}, ${city}) - Phone: ${phone}, Members: ${membersCount}`)
+    const { name, gymName, city, phone, email, membersCount } = req.body || {}
+    console.log(`[Lead Capture] New Access Request: ${name} (${gymName}, ${city}) - Email: ${email}, Phone: ${phone}, Members: ${membersCount}`)
     res.json({ success: true, message: 'Access request logged successfully' })
   } catch (err) {
     res.json({ success: true })

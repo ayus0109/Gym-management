@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
   ArrowLeft,
+  ArrowRight,
   Bell,
   CheckCheck,
   ChevronRight,
@@ -115,6 +116,7 @@ export function App() {
     return true
   })
   const [active, setActive] = useState('Overview')
+  const [previousTab, setPreviousTab] = useState<string | null>(null)
   const [navHistory, setNavHistory] = useState<string[]>(['Overview'])
   const [members, setMembers] = useState<MemberView[]>([])
   const [memberDtos, setMemberDtos] = useState<MemberDto[]>([])
@@ -177,8 +179,8 @@ export function App() {
   // Browser Navigation & History Handling
   const navigateTo = (tab: string, pushHistory = true) => {
     if (tab === active) return
+    setPreviousTab(active)
     if (pushHistory) {
-      setNavHistory(prev => [...prev, tab])
       window.history.pushState({ tab }, '', `#${tab.toLowerCase().replace(/\s+/g, '-')}`)
     }
     setActive(tab)
@@ -186,38 +188,43 @@ export function App() {
   }
 
   const handleGoBack = () => {
-    if (navHistory.length > 1) {
-      const nextHistory = navHistory.slice(0, -1)
-      const prevTab = nextHistory[nextHistory.length - 1]
-      setNavHistory(nextHistory)
-      setActive(prevTab)
-      window.history.pushState({ tab: prevTab }, '', `#${prevTab.toLowerCase().replace(/\s+/g, '-')}`)
+    if (previousTab && previousTab !== active) {
+      navigateTo(previousTab)
     } else {
-      navigateTo('Overview', false)
+      window.history.back()
     }
   }
 
   useEffect(() => {
+    const tabMap: Record<string, string> = {
+      overview: 'Overview',
+      members: 'Members',
+      renewals: 'Renewals',
+      'membership-plans': 'Membership plans',
+      payments: 'Payments',
+      'gym-profile': 'Gym profile',
+    }
+
+    const hash = window.location.hash.replace('#', '')
+    if (hash && tabMap[hash] && tabMap[hash] !== active) {
+      setActive(tabMap[hash])
+    }
+
     const handlePopState = (e: PopStateEvent) => {
       const tab = e.state?.tab
       if (tab) {
+        setPreviousTab(active)
         setActive(tab)
       } else {
-        const hash = window.location.hash.replace('#', '')
-        const tabMap: Record<string, string> = {
-          overview: 'Overview',
-          members: 'Members',
-          renewals: 'Renewals',
-          'membership-plans': 'Membership plans',
-          payments: 'Payments',
-          'gym-profile': 'Gym profile',
-        }
-        setActive(tabMap[hash] || 'Overview')
+        const h = window.location.hash.replace('#', '')
+        const mapped = tabMap[h] || 'Overview'
+        setPreviousTab(active)
+        setActive(mapped)
       }
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
+  }, [active])
 
   // Initial Auth Check & Session Sync
   useEffect(() => {
@@ -763,17 +770,39 @@ export function App() {
               <Menu size={20} />
             </button>
 
-            {active !== 'Overview' && (
+            <div className="history-nav-group">
               <button
                 type="button"
-                className="topbar-back-btn"
-                onClick={handleGoBack}
-                title="Go back to previous page"
+                className="topbar-nav-icon-btn"
+                onClick={() => window.history.back()}
+                title="Go back (Browser History)"
+                aria-label="Back"
               >
-                <ArrowLeft size={15} />
-                <span>Back</span>
+                <ArrowLeft size={16} />
               </button>
-            )}
+
+              <button
+                type="button"
+                className="topbar-nav-icon-btn"
+                onClick={() => window.history.forward()}
+                title="Go forward (Browser History)"
+                aria-label="Forward"
+              >
+                <ArrowRight size={16} />
+              </button>
+
+              {previousTab && previousTab !== active && (
+                <button
+                  type="button"
+                  className="topbar-previous-btn"
+                  onClick={() => navigateTo(previousTab)}
+                  title={`Switch to previous tab: ${previousTab}`}
+                >
+                  <Clock3 size={13} />
+                  <span>Previous: {previousTab}</span>
+                </button>
+              )}
+            </div>
 
             <div className="topbar-breadcrumbs">
               <button

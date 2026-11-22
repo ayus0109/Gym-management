@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs'
 import { PaymentMethod, PaymentStatus, MembershipStatus, NotificationStatus, Prisma } from '../generated/prisma/client.js'
 import { DateTime } from 'luxon'
 import { prisma } from './db.js'
-import { AuthenticatedRequest, clearSessionCookie, decryptSecret, encryptSecret, requireGym, requireOwner, setSessionCookie, sha256 } from './security.js'
+import { AuthenticatedRequest, clearSessionCookie, decryptSecret, encryptSecret, requireGym, requireOwner, setSessionCookie, sha256, SESSION_DAYS } from './security.js'
 import { APP_TIMEZONE, expiryFor, normalizePhone, paiseFromRupees, reminderTimeFor, utcDateOnly } from './domain.js'
 import { createRazorpayPaymentLink, sendRenewalTemplate } from './providers.js'
 
@@ -70,7 +70,7 @@ apiRouter.post('/auth/register', async (req, res, next) => {
         data: {
           ownerId: createdOwner.id,
           tokenHash: sha256(token),
-          expiresAt: new Date(Date.now() + 14 * 86400000),
+          expiresAt: new Date(Date.now() + SESSION_DAYS * 86400000),
         },
       })
       const createdGym = await tx.gym.create({
@@ -96,7 +96,7 @@ apiRouter.post('/auth/login', async (req, res, next) => {
     const owner = await prisma.owner.findUnique({ where: { email: data.email.toLowerCase() } })
     if (!owner || !(await bcrypt.compare(data.password, owner.passwordHash))) return httpError(res, 401, 'Email or password is incorrect.')
     const token = newSessionToken()
-    await prisma.session.create({ data: { ownerId: owner.id, tokenHash: sha256(token), expiresAt: new Date(Date.now() + 14 * 86400000) } })
+    await prisma.session.create({ data: { ownerId: owner.id, tokenHash: sha256(token), expiresAt: new Date(Date.now() + SESSION_DAYS * 86400000) } })
     setSessionCookie(res, token)
     let gym = await prisma.gym.findUnique({ where: { ownerId: owner.id }, select: { id: true, name: true, address: true, phone: true, timezone: true } })
     if (!gym) {

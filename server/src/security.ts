@@ -3,7 +3,7 @@ import type { CookieOptions, Request, Response, NextFunction } from 'express'
 import { prisma } from './db.js'
 
 export const SESSION_COOKIE = 'forma_session'
-export const SESSION_DAYS = 14
+export const SESSION_DAYS = 365
 const cookieOptions: CookieOptions = { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000 }
 export function sha256(value: string) { return createHash('sha256').update(value).digest('hex') }
 export function setSessionCookie(res: Response, token: string) { res.cookie(SESSION_COOKIE, token, cookieOptions) }

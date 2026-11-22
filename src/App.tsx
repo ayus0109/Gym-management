@@ -90,9 +90,30 @@ function mapMember(member: MemberDto): MemberView {
 }
 
 export function App() {
-  const [owner, setOwner] = useState<OwnerDto | null>(null)
-  const [gym, setGym] = useState<GymDto | null>(null)
-  const [authLoading, setAuthLoading] = useState(true)
+  const [owner, setOwner] = useState<OwnerDto | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('forma_auth_session')
+        if (saved) return JSON.parse(saved).owner
+      } catch {}
+    }
+    return null
+  })
+  const [gym, setGym] = useState<GymDto | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('forma_auth_session')
+        if (saved) return JSON.parse(saved).gym
+      } catch {}
+    }
+    return null
+  })
+  const [authLoading, setAuthLoading] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !localStorage.getItem('forma_auth_session')
+    }
+    return true
+  })
   const [active, setActive] = useState('Overview')
   const [navHistory, setNavHistory] = useState<string[]>(['Overview'])
   const [members, setMembers] = useState<MemberView[]>([])
@@ -198,14 +219,38 @@ export function App() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
-  // Initial Auth Check
+  // Initial Auth Check & Session Sync
   useEffect(() => {
+    // If it's the demo session, keep it local unless signed out
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('forma_auth_session') : null
+    let isDemo = false
+    try {
+      if (saved && JSON.parse(saved)?.owner?.id === 'demo-owner') {
+        isDemo = true
+      }
+    } catch {}
+
+    if (isDemo) {
+      setAuthLoading(false)
+      return
+    }
+
     api<{ owner: OwnerDto; gym: GymDto | null }>('/auth/me')
       .then(result => {
         setOwner(result.owner)
         setGym(result.gym)
+        localStorage.setItem('forma_auth_session', JSON.stringify({ owner: result.owner, gym: result.gym }))
       })
-      .catch(() => {})
+      .catch(err => {
+        const msg = String(err?.message || '')
+        // ONLY invalidate local session if the backend explicitly rejected credentials (401 / session expired)
+        // If it's a cold boot timeout (502/504) or offline network error, keep user logged in with cached credentials!
+        if (msg.includes('401') || msg.includes('Please sign in') || msg.includes('expired')) {
+          localStorage.removeItem('forma_auth_session')
+          setOwner(null)
+          setGym(null)
+        }
+      })
       .finally(() => setAuthLoading(false))
   }, [])
 
@@ -552,6 +597,7 @@ export function App() {
 
   // Sign out
   const handleSignOut = async () => {
+    localStorage.removeItem('forma_auth_session')
     if (owner?.id !== 'demo-owner') {
       try {
         await api('/auth/logout', { method: 'POST' })
@@ -579,6 +625,7 @@ export function App() {
         onDone={(newOwner, newGym) => {
           setOwner(newOwner)
           setGym(newGym)
+          localStorage.setItem('forma_auth_session', JSON.stringify({ owner: newOwner, gym: newGym }))
         }}
       />
     )

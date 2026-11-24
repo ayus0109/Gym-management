@@ -18,6 +18,10 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
   const [displayValue, setDisplayValue] = useState(0)
 
   useEffect(() => {
+    if (durationMs <= 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplayValue(value)
+      return
+    }
     let startTimestamp: number | null = null
     const startVal = displayValue
     const endVal = value

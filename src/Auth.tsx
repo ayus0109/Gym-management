@@ -453,7 +453,7 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
 
         <p className="auth-subtitle">
           {page === 'register'
-            ? 'Enter your Gmail and password to launch your gym workspace instantly.'
+            ? 'Enter your email and password to launch your gym workspace instantly.'
             : 'Enter your credentials to return to your gym workspace.'}
         </p>
 
@@ -463,7 +463,7 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
               <span>Gym / Studio Name (Optional)</span>
               <div className="auth-input-pro">
                 <Dumbbell size={16} />
-                <input name="gymName" placeholder="My Gym Studio" />
+                <input name="gymName" maxLength={120} autoComplete="organization" placeholder="My Gym Studio" />
               </div>
             </label>
           )}
@@ -472,7 +472,7 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
             <span>Email Address</span>
             <div className="auth-input-pro">
               <Mail size={16} />
-              <input name="email" type="email" required placeholder="owner@gmail.com" autoFocus />
+              <input name="email" autoComplete="username" maxLength={254} type="email" required placeholder="owner@gmail.com" autoFocus />
             </div>
           </label>
 
@@ -484,8 +484,10 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
                 name="password"
                 type="password"
                 required
-                minLength={6}
-                placeholder="Enter your password (min 6 characters)"
+                minLength={page === 'register' ? 6 : 1}
+                maxLength={128}
+                autoComplete={page === 'register' ? 'new-password' : 'current-password'}
+                placeholder={page === 'register' ? 'At least 6 characters' : 'Enter your password'}
               />
             </div>
           </label>

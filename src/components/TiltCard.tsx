@@ -23,7 +23,7 @@ export const TiltCard: React.FC<TiltCardProps> = ({
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!cardRef.current) return
+      if (!cardRef.current || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
       const rect = cardRef.current.getBoundingClientRect()
       const x = e.clientX - rect.left
       const y = e.clientY - rect.top

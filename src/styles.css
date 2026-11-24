@@ -42,6 +42,7 @@ html[data-theme="light"] {
   --accent-primary: #0f172a;
   --accent-primary-text: #ffffff;
   --accent-lime: #10b981;
+  --accent-text: #046747;
   --accent-lime-glow: rgba(16, 185, 129, 0.15);
   --accent-cyan: #0284c7;
   --accent-amber: #d97706;
@@ -74,12 +75,12 @@ html[data-theme="dark"],
   --border-focus: rgba(255, 255, 255, 0.18);
   --ink-primary: #f4f4f5;
   --ink-secondary: #a1a1aa;
-  --ink-muted: #71717a;
+  --ink-muted: #94949e;
 
   /* V3 Extensions compatibility aliases */
   --text-primary: #f4f4f5;
   --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
+  --text-muted: #94949e;
   --surface-card: #14151a;
   --surface-bg: #09090b;
   --surface-prominent: rgba(255, 255, 255, 0.08);
@@ -89,6 +90,7 @@ html[data-theme="dark"],
   --accent-primary-text: #09090b;
   --accent-lime: #10b981;
   --accent-lime-glow: rgba(16, 185, 129, 0.15);
+  --accent-text: #34d399;
   --accent-cyan: #38bdf8;
   --accent-amber: #f59e0b;
   --accent-coral: #f43f5e;
@@ -228,7 +230,7 @@ html[data-theme="dark"] .button-primary:hover {
 }
 
 html[data-theme="dark"] .button-link-accent {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .button-link-accent:hover {
@@ -1847,7 +1849,7 @@ html[data-theme="dark"] .settings-panel-card.highlight-card {
 }
 
 html[data-theme="dark"] .delta.positive {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .delta.neutral {
@@ -1895,7 +1897,7 @@ html[data-theme="dark"] .delta.positive {
 
 .mini-icon.mint {
   background: rgba(22, 163, 74, 0.1);
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .mini-icon.lilac {
@@ -1932,7 +1934,7 @@ html[data-theme="dark"] .delta.positive {
 }
 
 html[data-theme="dark"] .metric-mini strong i.good {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .mini-separator {
@@ -2051,7 +2053,7 @@ html[data-theme="dark"] .metric-mini strong i.good {
 .tooltip-rev {
   font-size: 13px;
   font-weight: 700;
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .tooltip-checkins {
@@ -2108,7 +2110,7 @@ html[data-theme="dark"] .metric-mini strong i.good {
 }
 
 html[data-theme="dark"] .intensity-chip.prime {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .intensity-chip.calm {
@@ -2261,7 +2263,7 @@ html[data-theme="dark"] .live-dot {
 }
 
 html[data-theme="dark"] .live-label {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .text-button {
@@ -2360,7 +2362,7 @@ html[data-theme="dark"] .live-label {
   width: 28px;
   border-radius: 8px;
   background: rgba(212, 255, 0, 0.15);
-  color: var(--accent-lime);
+  color: var(--accent-text);
   display: grid;
   place-items: center;
   flex: none;
@@ -2481,7 +2483,7 @@ html[data-theme="dark"] .data-table tbody tr:hover {
 
 html[data-theme="dark"] .status-badge.active,
 html[data-theme="dark"] .status-badge.paid {
-  color: var(--accent-lime);
+  color: var(--accent-text);
   background: rgba(212, 255, 0, 0.15);
 }
 
@@ -2703,7 +2705,7 @@ html[data-theme="dark"] .row-popover button:hover {
 }
 
 html[data-theme="dark"] .active-plan {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .active-plan i, .inactive-plan i {
@@ -2842,7 +2844,7 @@ html[data-theme="dark"] .active-plan {
 }
 
 html[data-theme="dark"] .connection-status.active {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .integration-callout {
@@ -2914,7 +2916,7 @@ html[data-theme="dark"] .connection-status.active {
 
 html[data-theme="dark"] .modal-icon {
   background: rgba(212, 255, 0, 0.15);
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .modal-head h2 {
@@ -2948,7 +2950,7 @@ html[data-theme="dark"] .modal-icon {
 }
 
 html[data-theme="dark"] .expiry-preview strong {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .modal-actions {
@@ -3340,7 +3342,7 @@ html[data-theme="dark"] .fc-trend.positive { color: var(--accent-lime); }
 }
 
 html[data-theme="dark"] .section-eyebrow {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .section-head h2 {
@@ -3573,7 +3575,7 @@ html[data-theme="dark"] .pricing-card.featured-plan {
 }
 
 html[data-theme="dark"] .pricing-features svg {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .pricing-btn {
@@ -3619,7 +3621,7 @@ html[data-theme="dark"] .pricing-features svg {
   height: 36px;
   border-radius: 50%;
   background: #243526;
-  color: var(--accent-lime);
+  color: var(--accent-text);
   font-size: 12px;
   font-weight: 700;
   display: grid;
@@ -3827,7 +3829,7 @@ html[data-theme="dark"] .auth-icon-badge {
 
 html[data-theme="dark"] .auth-switch-pro button,
 html[data-theme="dark"] .auth-back-pro {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .auth-back-pro {
@@ -5242,7 +5244,7 @@ html[data-theme="dark"] .auth-back-pro {
 }
 
 .spatial-dumbbell-icon {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .tilt-glare {
@@ -5281,7 +5283,7 @@ html[data-theme="dark"] .auth-back-pro {
 }
 
 .brand-dot {
-  color: var(--accent-lime);
+  color: var(--accent-text);
 }
 
 .brand-tag {
@@ -5393,4 +5395,21 @@ html[data-theme="dark"] .brand-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent-text);
+  outline-offset: 3px;
+}
+.auth-input-pro:focus-within {
+  outline: 2px solid var(--accent-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .tilt-card { transform: none !important; }
 }

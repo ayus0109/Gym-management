@@ -91,9 +91,8 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
             </div>
 
             <nav className="landing-nav-links">
-              <a href="#features" onClick={e => { e.preventDefault(); document.getElementById('landing-features')?.scrollIntoView({ behavior: 'smooth' }) }}>Features</a>
-              <a href="#telemetry" onClick={e => { e.preventDefault(); document.getElementById('landing-telemetry')?.scrollIntoView({ behavior: 'smooth' }) }}>Floor Radar</a>
-              <a href="#pricing" onClick={e => { e.preventDefault(); document.getElementById('landing-pricing')?.scrollIntoView({ behavior: 'smooth' }) }}>Memberships</a>
+              <a href="#landing-features">Features</a>
+              <a href="#landing-pricing">Memberships</a>
             </nav>
 
             <div className="header-actions">

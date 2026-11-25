@@ -5413,3 +5413,7 @@ html[data-theme="dark"] .brand-tag {
   }
   .tilt-card { transform: none !important; }
 }
+
+.landing-section[id] {
+  scroll-margin-top: 88px;
+}

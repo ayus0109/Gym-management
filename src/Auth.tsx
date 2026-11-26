@@ -1,18 +1,12 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import {
-  Activity, AlertTriangle, ArrowRight, ArrowUpRight, Bell, CalendarDays,
-  Check, Dumbbell, Flame, LockKeyhole,
-  Mail, ShieldCheck, Sparkles, Star, UserRound, Users,
-  Wallet, Zap
-} from 'lucide-react'
+import { Activity, AlertTriangle, ArrowRight, Dumbbell, LockKeyhole, Mail, UserRound } from 'lucide-react'
 import { api, type GymDto, type OwnerDto } from './api'
-import TiltCard from './components/TiltCard'
+import './Welcome.css'
 
 export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: GymDto) => void }) {
   const [page, setPage] = useState<'landing' | 'login' | 'register'>('landing')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState<'monthly' | 'quarterly' | 'annual'>('monthly')
 
   // Pre-warm backend immediately on page load so Render wakes up before user signs in
   useEffect(() => {
@@ -71,354 +65,39 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
 
   if (page === 'landing') {
     return (
-      <main className="landing-shell">
-        {/* Ambient Glow Orbs */}
-        <div className="ambient-glow glow-top-left" />
-        <div className="ambient-glow glow-top-right" />
-        <div className="ambient-glow glow-center" />
-
-        {/* Floating Glass Header */}
-        <header className="landing-header">
-          <div className="landing-header-inner">
-            <div className="landing-brand" onClick={() => setPage('landing')} style={{ cursor: 'pointer' }}>
-              <div className="brand-mark">
-                <Activity size={20} strokeWidth={2.6} />
-              </div>
-              <span className="brand-title">
-                forma<span className="brand-dot">.</span>
-                <span className="brand-tag">PRO</span>
-              </span>
-            </div>
-
-            <nav className="landing-nav-links">
-              <a href="#landing-features">Features</a>
-              <a href="#landing-pricing">Memberships</a>
-            </nav>
-
-            <div className="header-actions">
-              <button className="landing-login" onClick={() => setPage('login')}>
-                Sign In
-              </button>
-              <button className="button button-primary hero-btn-glow" onClick={() => setPage('register')}>
-                Get Started <ArrowRight size={15} />
-              </button>
-            </div>
-          </div>
+      <main className="forma-welcome">
+        <header className="welcome-bar">
+          <strong><Activity aria-hidden="true" /> forma.</strong>
+          <button className="button button-secondary" onClick={() => setPage('login')}>Sign in <ArrowRight size={16} /></button>
         </header>
-
-        {/* HERO SECTION WITH 3D CANVAS */}
-        <section className="landing-hero-container">
-          <div className="landing-hero-content">
-            <div className="hero-badge">
-              <span className="hero-badge-dot">
-                <span className="radar-ping" />
-                <span className="radar-core" />
-              </span>
-              <span>MODERN FITNESS WORKSPACE</span>
-              <span className="hero-badge-pill">v2.4</span>
-            </div>
-
-            <h1 className="hero-headline">
-              Simple member management <br />
-              <span className="gradient-text">for gym owners.</span>
-            </h1>
-
-            <p className="hero-description">
-              Track renewals before they expire, send 1-click WhatsApp reminders with instant UPI QR codes,
-              and collect payments on time — with zero monthly software fees.
-            </p>
-
-            <div className="hero-actions">
-              <button className="button button-primary hero-cta-btn" onClick={() => setPage('register')}>
-                <span>Start Free Workspace</span>
-                <ArrowRight size={16} />
-              </button>
-              <button
-                className="button button-secondary hero-secondary-btn"
-                onClick={handleLaunchDemo}
-                title="Test-drive the live dashboard in a safe interactive demo sandbox"
-              >
-                <Sparkles size={15} />
-                <span>Explore Live Demo</span>
-              </button>
-            </div>
-
-            <div className="hero-stats-row">
-              <div className="hero-stat-pill">
-                <strong>99.4%</strong>
-                <span>On-Time Renewals</span>
-              </div>
-              <div className="hero-stat-divider" />
-              <div className="hero-stat-pill">
-                <strong>₹1.2Cr+</strong>
-                <span>Processed via UPI</span>
-              </div>
-              <div className="hero-stat-divider" />
-              <div className="hero-stat-pill">
-                <strong>500+</strong>
-                <span>Gyms in India</span>
-              </div>
+        <section className="welcome-hero">
+          <div>
+            <h1>Your gym,<br />at a glance.</h1>
+            <p>See whose membership is due, record a payment, and get back to the gym floor.</p>
+            <div className="welcome-actions">
+              <button className="button button-primary" onClick={() => setPage('register')}>Create workspace <ArrowRight size={17} /></button>
+              <button className="button button-secondary" onClick={handleLaunchDemo}>Explore demo</button>
             </div>
           </div>
-
-          {/* Interactive 3D WebGL Canvas + Floating Spatial Cards */}
-          <div className="landing-hero-visual">
-            <div className="hero-spatial-radar-wrapper">
-              <div className="spatial-core-orb">
-                <div className="spatial-ring ring-1" />
-                <div className="spatial-ring ring-2" />
-                <div className="spatial-ring ring-3" />
-                <div className="spatial-center-badge">
-                  <Dumbbell size={38} className="spatial-dumbbell-icon" />
-                  <span className="spatial-pulse-glow" />
-                </div>
-              </div>
+          <aside className="welcome-board" aria-label="Example gym overview">
+            <small>DEMO WORKSPACE</small><h2>Front desk</h2>
+            <div className="welcome-chart" aria-hidden="true">
+              {[34, 48, 42, 64, 55, 75, 68, 88, 82, 98].map((height, i) =>
+                <i key={height} style={{ height: height + '%', animationDelay: i * 45 + 'ms' }} />)}
             </div>
-
-            {/* Antigravity Floating Spatial Cards */}
-            <TiltCard maxTilt={10} className="floating-card float-top-right">
-              <div className="fc-icon sage">
-                <ShieldCheck size={18} />
-              </div>
-              <div className="fc-content">
-                <span>RENEWAL PIPELINE</span>
-                <strong>42 Members Active</strong>
-                <small className="fc-trend positive">↑ 18% vs last month</small>
-              </div>
-            </TiltCard>
-
-            <TiltCard maxTilt={12} className="floating-card float-bottom-left">
-              <div className="fc-icon amber">
-                <Zap size={18} />
-              </div>
-              <div className="fc-content">
-                <span>INSTANT PAYMENTS</span>
-                <strong>₹1,48,500 Recd</strong>
-                <small className="fc-trend neutral">WhatsApp 1-Click Pay</small>
-              </div>
-            </TiltCard>
-
-            <TiltCard maxTilt={8} className="floating-card float-bottom-right">
-              <div className="fc-icon cyan">
-                <Activity size={18} />
-              </div>
-              <div className="fc-content">
-                <span>PEAK CAPACITY</span>
-                <strong>68% Floor Load</strong>
-                <div className="fc-progress-track">
-                  <div className="fc-progress-bar" style={{ width: '68%' }} />
-                </div>
-              </div>
-            </TiltCard>
-          </div>
+            <div className="welcome-stat"><span>Active members</span><strong>128</strong></div>
+            <div className="welcome-stat"><span>Renewals this week</span><strong>8</strong></div>
+          </aside>
         </section>
-
-        {/* INTERACTIVE TELEMETRY & CAPABILITY HIGHLIGHTS */}
-        <section id="landing-features" className="landing-section">
-          <div className="section-head">
-            <div className="section-eyebrow">
-              <Sparkles size={14} /> ARCHITECTED FOR SPEED & CRAFT
-            </div>
-            <h2>Everything you need to command your fitness enterprise.</h2>
-            <p>From membership lifecycles to encrypted payment webhooks, every tool is refined to eliminate friction.</p>
-          </div>
-
-          <div className="features-grid">
-            <TiltCard maxTilt={6} className="feature-card">
-              <div className="feature-icon-box sage">
-                <Users size={22} />
-              </div>
-              <span className="feature-tag">01 / ATHLETES</span>
-              <h3>Intelligent Member Telemetry</h3>
-              <p>Keep real-time contact cards, status filters (Active, Expiring Soon, Expired, Due), and complete membership audit trails at hand.</p>
-              <div className="feature-mock-row">
-                <div className="mock-avatar">AM</div>
-                <div className="mock-info">
-                  <strong>Alex Mercer</strong>
-                  <span>CrossFit Pro · Expires in 5 days</span>
-                </div>
-                <span className="status-badge expiring-soon"><i></i>Expiring</span>
-              </div>
-            </TiltCard>
-
-            <TiltCard maxTilt={6} className="feature-card">
-              <div className="feature-icon-box lavender">
-                <Bell size={22} />
-              </div>
-              <span className="feature-tag">02 / AUTOMATION</span>
-              <h3>WhatsApp Renewal Engine</h3>
-              <p>Schedule automatic, personalized renewal notifications with embedded Razorpay payment links straight to your athletes' phones.</p>
-              <div className="feature-mock-row">
-                <div className="mock-avatar green">WA</div>
-                <div className="mock-info">
-                  <strong>Automated Reminder Sent</strong>
-                  <span>Razorpay link attached</span>
-                </div>
-                <span className="status-badge active"><i></i>Delivered</span>
-              </div>
-            </TiltCard>
-
-            <TiltCard maxTilt={6} className="feature-card">
-              <div className="feature-icon-box amber">
-                <Wallet size={22} />
-              </div>
-              <span className="feature-tag">03 / CASH FLOW</span>
-              <h3>Unified Settlement Hub</h3>
-              <p>Manage offline cash & UPI transactions alongside automated online Razorpay gateway payouts with automatic transaction references.</p>
-              <div className="feature-mock-row">
-                <div className="mock-avatar amber">₹</div>
-                <div className="mock-info">
-                  <strong>₹3,500 Collected Offline</strong>
-                  <span>Bank Transfer / UPI QR</span>
-                </div>
-                <span className="status-badge paid"><i></i>Verified</span>
-              </div>
-            </TiltCard>
-
-            <TiltCard maxTilt={6} className="feature-card">
-              <div className="feature-icon-box cyan">
-                <CalendarDays size={22} />
-              </div>
-              <span className="feature-tag">04 / ARCHITECTURE</span>
-              <h3>Dynamic Membership Plans</h3>
-              <p>Configure custom durations (from 15-day trials to annual all-access passes) with live pricing models and instant member enrollment.</p>
-              <div className="feature-mock-row">
-                <div className="mock-avatar blue">
-                  <Zap size={14} />
-                </div>
-                <div className="mock-info">
-                  <strong>Quarterly Elite Pass</strong>
-                  <span>90 Days Unlimited Access</span>
-                </div>
-                <span className="status-badge active"><i></i>Popular</span>
-              </div>
-            </TiltCard>
-          </div>
+        <section className="welcome-features" aria-label="Workspace features">
+          <article><h2>Members</h2><p>Find a member’s plan, contact details, and membership history.</p></article>
+          <article><h2>Renewals</h2><p>See upcoming expiries and follow up from one list.</p></article>
+          <article><h2>Payments</h2><p>Record collections and keep track of outstanding dues.</p></article>
         </section>
-
-        {/* INTERACTIVE MEMBERSHIP SIMULATOR */}
-        <section id="landing-pricing" className="landing-section pricing-section">
-          <div className="section-head">
-            <div className="section-eyebrow">
-              <Flame size={14} /> SIMPLE TRANSPARENT ACCESS
-            </div>
-            <h2>Select the tier tailored to your facility.</h2>
-            <p>Every plan includes unmetered member profiles, automated WhatsApp renewal triggers, and encrypted Razorpay integration.</p>
-            <div className="pricing-tabs">
-              <button
-                className={`pricing-tab ${activeTab === 'monthly' ? 'active' : ''}`}
-                onClick={() => setActiveTab('monthly')}
-              >
-                Monthly Plan
-              </button>
-              <button
-                className={`pricing-tab ${activeTab === 'quarterly' ? 'active' : ''}`}
-                onClick={() => setActiveTab('quarterly')}
-              >
-                Quarterly (Save 15%)
-              </button>
-              <button
-                className={`pricing-tab ${activeTab === 'annual' ? 'active' : ''}`}
-                onClick={() => setActiveTab('annual')}
-              >
-                Annual Pro (Save 30%)
-              </button>
-            </div>
-          </div>
-
-          <div className="pricing-cards-container">
-            <TiltCard maxTilt={5} className="pricing-card">
-              <div className="pricing-header">
-                <h3>Studio Starter</h3>
-                <p>For independent fitness coaches & boutique gym studios.</p>
-                <div className="price-tag">
-                  <strong>{activeTab === 'monthly' ? '₹999' : activeTab === 'quarterly' ? '₹2,499' : '₹7,999'}</strong>
-                  <span>/ workspace</span>
-                </div>
-              </div>
-              <ul className="pricing-features">
-                <li><Check size={16} /> Up to 150 Active Members</li>
-                <li><Check size={16} /> WhatsApp Renewal Notifications</li>
-                <li><Check size={16} /> Offline Cash & UPI Recording</li>
-                <li><Check size={16} /> Real-Time Analytics Dashboard</li>
-              </ul>
-              <button className="button button-secondary pricing-btn" onClick={() => setPage('register')}>
-                <span>Get Started</span>
-                <ArrowRight size={15} />
-              </button>
-            </TiltCard>
-
-            <TiltCard maxTilt={6} className="pricing-card featured-plan">
-              <div className="plan-badge">MOST POPULAR · FITNESS PRO</div>
-              <div className="pricing-header">
-                <h3>Forma Elite</h3>
-                <p>For high-volume fitness clubs, CrossFit boxes & gym chains.</p>
-                <div className="price-tag">
-                  <strong>{activeTab === 'monthly' ? '₹2,499' : activeTab === 'quarterly' ? '₹6,299' : '₹19,999'}</strong>
-                  <span>/ workspace</span>
-                </div>
-              </div>
-              <ul className="pricing-features">
-                <li><Check size={16} /> Unlimited Athlete Profiles</li>
-                <li><Check size={16} /> Automated Meta Cloud WhatsApp API</li>
-                <li><Check size={16} /> Integrated Razorpay Payment Links</li>
-                <li><Check size={16} /> Live Floor Capacity Radar</li>
-                <li><Check size={16} /> Priority 24/7 Technical Support</li>
-              </ul>
-              <button className="button button-primary pricing-btn hero-btn-glow" onClick={() => setPage('register')}>
-                <span>Get Started</span>
-                <ArrowRight size={16} />
-              </button>
-            </TiltCard>
-          </div>
-        </section>
-
-        {/* TESTIMONIAL & TRUST */}
-        <section className="landing-section trust-section">
-          <div className="trust-quote-card">
-            <div className="quote-stars">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={16} fill="#f59e0b" color="#f59e0b" />
-              ))}
-            </div>
-            <blockquote>
-              “Forma completely changed the way we handle renewals. We recovered over ₹85,000 in overdue payments
-              in our first two weeks using automated WhatsApp links. The interface is stunning and takes zero training to learn.”
-            </blockquote>
-            <div className="quote-author">
-              <div className="author-avatar">VK</div>
-              <div>
-                <strong>Vikramaditya Kulkarni</strong>
-                <span>Head of Operations, IronForge Gym (Mumbai)</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* FOOTER */}
-        <footer className="landing-footer-pro">
-          <div className="footer-pro-inner">
-            <div className="footer-brand">
-              <div className="brand-mark small">
-                <Activity size={16} />
-              </div>
-              <span>forma.pro</span>
-            </div>
-            <div className="footer-links">
-              <span>© 2026 Forma Technologies Inc.</span>
-              <span>•</span>
-              <span>Designed for fitness studios and gym owners</span>
-            </div>
-            <button className="landing-secondary" onClick={() => setPage('login')}>
-              Owner Sign In <ArrowUpRight size={14} />
-            </button>
-          </div>
-        </footer>
       </main>
     )
   }
 
-  // AUTH CARDS: LOGIN, REGISTER, GYM SETUP
   return (
     <main className="auth-shell">
       <div className="ambient-glow glow-center" />
@@ -437,7 +116,7 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
         </span>
       </div>
 
-      <TiltCard maxTilt={5} className="auth-card-pro">
+      <section className="auth-card-pro">
         <div className="auth-icon-badge">
           {page === 'register' ? <UserRound size={22} /> : <LockKeyhole size={22} />}
         </div>
@@ -517,11 +196,8 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
           </button>
         </div>
 
-        <div className="auth-footnote-pro">
-          <ShieldCheck size={14} />
-          <span>Encrypted with AES-256 · Owner access portal</span>
-        </div>
-      </TiltCard>
+
+      </section>
 
       <footer className="auth-footer-pro">
         <span>© 2026 Forma Technologies</span>

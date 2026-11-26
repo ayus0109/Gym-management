@@ -1,0 +1,14 @@
+{
+  "name": "forma-gym",
+  "account_id": "e0b21bbb99b4c8a0ba99295612279fdd",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-11-26",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api", "/api/*"]
+  }
+}

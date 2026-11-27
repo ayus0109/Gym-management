@@ -1,12 +1,39 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import { Activity, AlertTriangle, ArrowRight, Dumbbell, LockKeyhole, Mail, UserRound } from 'lucide-react'
+import { Activity, AlertTriangle, ArrowLeft, ArrowRight, Dumbbell, LockKeyhole, Mail, UserRound } from 'lucide-react'
 import { api, type GymDto, type OwnerDto } from './api'
 import './Welcome.css'
 
+type AuthPage = 'landing' | 'login' | 'register'
+
+function currentPage(): AuthPage {
+  const hash = window.location.hash.slice(1)
+  return hash === 'login' || hash === 'register' ? hash : 'landing'
+}
+
 export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: GymDto) => void }) {
-  const [page, setPage] = useState<'landing' | 'login' | 'register'>('landing')
+  const [page, updatePage] = useState(currentPage)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    function restorePage() {
+      updatePage(currentPage())
+      setError('')
+    }
+    window.addEventListener('popstate', restorePage)
+    return () => window.removeEventListener('popstate', restorePage)
+  }, [])
+
+  function setPage(next: AuthPage) {
+    window.history.pushState({ formaAuth: true }, '', '#' + next)
+    updatePage(next)
+    setError('')
+  }
+
+  function goBack() {
+    if (window.history.state?.formaAuth) window.history.back()
+    else setPage('landing')
+  }
 
   // Pre-warm backend immediately on page load so Render wakes up before user signs in
   useEffect(() => {
@@ -103,8 +130,8 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
       <div className="ambient-glow glow-center" />
 
       {/* Floating Brand Header */}
-      <button className="auth-brand" type="button" aria-label="Back to Forma home" onClick={() => setPage('landing')}>
-        <Activity aria-hidden="true" size={22} /><span className="brand-title">forma.</span>
+      <button className="auth-brand" type="button" onClick={goBack}>
+        <ArrowLeft aria-hidden="true" size={20} /> Back
       </button>
 
       <section className="auth-card-pro">

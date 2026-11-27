@@ -12,7 +12,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  MessageCircle,
   Moon,
   Plus,
   Search,
@@ -728,29 +727,23 @@ export function App() {
         {owner.id === 'demo-owner' && (
           <div className="demo-mode-top-banner">
             <div className="dmtb-left">
-              <span className="demo-pill">LIVE DEMO MODE</span>
-              <span>Testing <strong>IronPeak Fitness Studio</strong> workspace with sample data.</span>
+              <span className="demo-pill">DEMO</span>
+              <span>Explore <strong>IronPeak Fitness Studio</strong> with sample data.</span>
             </div>
             <div className="dmtb-right">
               <button
                 type="button"
-                className="button button-whatsapp-sm"
-                onClick={() => {
-                  const msg = encodeURIComponent("Hi Ayush, I just test-drove the Forma Live Demo and I would like to purchase / request access for my gym workspace.")
-                  window.open(`https://wa.me/${import.meta.env.VITE_OWNER_WHATSAPP || '919999990001'}?text=${msg}`, '_blank')
-                }}
+                className="button button-secondary text-xs"
+                onClick={() => navigateTo('Renewals')}
               >
-                <MessageCircle size={14} />
-                <span>Request Real Workspace</span>
+                <Clock3 size={14} aria-hidden="true" />
+                View sample renewals
               </button>
               <button
                 type="button"
                 className="button button-secondary text-xs"
                 style={{ height: '28px', padding: '0 10px' }}
-                onClick={() => {
-                  setOwner(null)
-                  setGym(null)
-                }}
+                onClick={handleSignOut}
               >
                 Exit Demo
               </button>

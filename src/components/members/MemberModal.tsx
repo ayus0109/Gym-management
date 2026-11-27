@@ -1,3 +1,4 @@
+import ModalBackdrop from '../common/ModalBackdrop'
 import React, { useState, type FormEvent } from 'react'
 import { CalendarDays, Check, Plus, UserRound, X } from 'lucide-react'
 import { money, shortDate, type PlanDto } from '../../api'
@@ -29,12 +30,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
     : 'Select a plan'
 
   return (
-    <div
-      className="modal-backdrop"
-      onMouseDown={event => {
-        if (event.target === event.currentTarget) onClose()
-      }}
-    >
+    <ModalBackdrop label="Member profile" onClose={onClose} dismissOutside>
       <form className="modal" onSubmit={onSubmit}>
         <div className="modal-head">
           <div>
@@ -48,7 +44,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
                 : 'Enroll a new member with their initial membership plan.'}
             </p>
           </div>
-          <button type="button" className="icon-button" onClick={onClose}>
+          <button type="button" aria-label="Close dialog" className="icon-button" onClick={onClose}>
             <X size={18} />
           </button>
         </div>
@@ -144,7 +140,7 @@ export const MemberModal: React.FC<MemberModalProps> = ({
           </button>
         </div>
       </form>
-    </div>
+    </ModalBackdrop>
   )
 }
 

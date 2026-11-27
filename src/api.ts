@@ -67,7 +67,7 @@ export type BulkImportMember = {
 }
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const isIdempotent = !options.method || options.method === 'GET' || options.method === 'POST'
+  const isIdempotent = ['GET', 'HEAD'].includes((options.method ?? 'GET').toUpperCase())
   const maxRetries = isIdempotent ? 3 : 1
   let attempt = 0
 
@@ -132,7 +132,7 @@ export function generateUpiUrl(params: {
   const pn = encodeURIComponent(params.payeeName.trim() || 'Gym Membership')
   const am = params.amountRupees > 0 ? params.amountRupees.toFixed(2) : ''
   const tn = encodeURIComponent(params.transactionNote || 'Membership Renewal')
-  return `upi://pay?pa=${vpa}&pn=${pn}${am ? `&am=${am}` : ''}&cu=INR&tn=${tn}`
+  return `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${pn}${am ? `&am=${am}` : ''}&cu=INR&tn=${tn}`
 }
 
 export function formatRenewalMessage(params: {

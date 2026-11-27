@@ -13,6 +13,8 @@ test('owners cannot list or modify another gym’s members, plans, or payments',
   const [{ prisma }, { app }, { encryptSecret }, bcryptModule] = await Promise.all([import('./db.js'), import('./app.js'), import('./security.js'), import('bcryptjs')])
   const bcrypt = bcryptModule.default
   const suffix = randomUUID()
+  const linkId = `plink_test_${suffix}`
+  const providerPaymentId = `pay_test_${suffix}`
   const emailA = `owner-a-${suffix}@example.test`
   const emailB = `owner-b-${suffix}@example.test`
   const passwordHash = await bcrypt.hash('safe-test-password-123', 4)
@@ -24,7 +26,7 @@ test('owners cannot list or modify another gym’s members, plans, or payments',
   const memberB = await prisma.member.create({ data: { gymId: gymB.id, name: 'Private member', phone: '+919876511111' } })
   const planB = await prisma.membershipPlan.create({ data: { gymId: gymB.id, name: 'Private plan', durationDays: 30, pricePaise: 100000 } })
   const membershipB = await prisma.membership.create({ data: { gymId: gymB.id, memberId: memberB.id, planId: planB.id, planNameSnapshot: planB.name, durationDaysSnapshot: planB.durationDays, amountPaise: planB.pricePaise, startDate: new Date('2026-11-01T00:00:00Z'), expiryDate: new Date('2026-11-30T00:00:00Z') } })
-  const paymentB = await prisma.payment.create({ data: { gymId: gymB.id, memberId: memberB.id, membershipId: membershipB.id, amountPaise: 100000, method: 'RAZORPAY', status: 'PENDING', razorpayPaymentLinkId: 'plink_tenant_test_1' } })
+  const paymentB = await prisma.payment.create({ data: { gymId: gymB.id, memberId: memberB.id, membershipId: membershipB.id, amountPaise: 100000, method: 'RAZORPAY', status: 'PENDING', razorpayPaymentLinkId: linkId } })
   await prisma.integrationSettings.create({ data: { gymId: gymB.id, razorpayWebhookEncrypted: encryptSecret('integration-test-secret') } })
   const server = app.listen(0)
   try {
@@ -60,7 +62,32 @@ test('owners cannot list or modify another gym’s members, plans, or payments',
     assert.equal(new Date(createdMember.memberships[0].expiryDate).toISOString().slice(0, 10), '2026-11-30')
     assert.equal(createdMember.memberships[0].status, 'ACTIVE')
 
-    const webhookBody = JSON.stringify({ event: 'payment_link.paid', payload: { payment_link: { entity: { id: 'plink_tenant_test_1', amount_paid: 100000 } }, payment: { entity: { id: 'pay_tenant_test_1' } } } })
+    const headers = { cookie, 'content-type': 'application/json' }
+    const settings = { upiId: 'test@upi', whatsappBusinessAccountId: '12345', renewalTemplate: 'Hello {name}', whatsappTemplateName: 'renewal_notice' }
+    const configured = await fetch(base + '/settings/integrations', { method: 'PUT', headers, body: JSON.stringify(settings) })
+    assert.equal(configured.status, 200)
+    const stored = await configured.json() as Record<string, unknown>
+    for (const [key, value] of Object.entries(settings)) assert.equal(stored[key], value)
+
+    const enrolment = await fetch(base + '/members', { method: 'POST', headers, body: JSON.stringify({
+      name: 'Pending Member', phone: '9876543321', planId: planA.id, paymentStatus: 'PENDING',
+    }) })
+    assert.equal(enrolment.status, 201)
+    const pendingMember = await enrolment.json() as { memberships: Array<{ id: string }> }
+    const membershipId = pendingMember.memberships[0].id
+    const collect = (amount: number) => fetch(base + '/payments/offline', {
+      method: 'POST', headers, body: JSON.stringify({ membershipId, amount, method: 'CASH' }),
+    })
+    assert.equal((await collect(1250)).status, 400)
+    assert.equal((await collect(200.25)).status, 201)
+    const balance = await prisma.payment.findFirstOrThrow({ where: { membershipId, status: 'PENDING' } })
+    assert.equal(balance.amountPaise, 79975)
+    assert.equal((await collect(799.75)).status, 201)
+    assert.equal(await prisma.payment.count({ where: { membershipId, status: 'PENDING' } }), 0)
+    const paidTotal = await prisma.payment.aggregate({ where: { membershipId, status: 'PAID' }, _sum: { amountPaise: true } })
+    assert.equal(paidTotal._sum.amountPaise, 100000)
+
+    const webhookBody = JSON.stringify({ event: 'payment_link.paid', payload: { payment_link: { entity: { id: linkId, amount_paid: 100000 } }, payment: { entity: { id: providerPaymentId } } } })
     const badSignature = await fetch(`${base}/webhooks/razorpay`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-razorpay-signature': 'deadbeef', 'x-razorpay-event-id': `evt-bad-${suffix}` }, body: webhookBody })
     assert.equal(badSignature.status, 401)
     const signature = createHmac('sha256', 'integration-test-secret').update(webhookBody).digest('hex')

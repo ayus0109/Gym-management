@@ -39,8 +39,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   const [busyIntegrations, setBusyIntegrations] = useState(false)
 
   // Local state for live preview
-  const [upiId, setUpiId] = useState(integrations.upiId || integrations.whatsappBusinessAccountId || '')
-  const [template, setTemplate] = useState(integrations.renewalTemplate || integrations.whatsappTemplateName || DEFAULT_RENEWAL_TEMPLATE)
+  const [upiId, setUpiId] = useState(integrations.upiId || '')
+  const [template, setTemplate] = useState(integrations.renewalTemplate || DEFAULT_RENEWAL_TEMPLATE)
 
   // Sample preview data
   const sampleMessage = formatRenewalMessage({
@@ -134,7 +134,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               </div>
               <div>
                 <h3>Free WhatsApp & UPI Reminders</h3>
-                <p>Zero GST, zero Meta Cloud API fees, zero verification needed</p>
+                <p>Set the payment address and message used for manual reminders.</p>
               </div>
             </div>
 

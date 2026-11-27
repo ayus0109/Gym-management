@@ -103,27 +103,14 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
       <div className="ambient-glow glow-center" />
 
       {/* Floating Brand Header */}
-      <div
-        className="auth-brand"
-        onClick={() => setPage('landing')}
-        style={{ cursor: 'pointer' }}
-      >
-        <div className="brand-mark">
-          <Activity size={20} strokeWidth={2.6} />
-        </div>
-        <span className="brand-title">
-          forma<span className="brand-dot">.</span>
-        </span>
-      </div>
+      <button className="auth-brand" type="button" aria-label="Back to Forma home" onClick={() => setPage('landing')}>
+        <Activity aria-hidden="true" size={22} /><span className="brand-title">forma.</span>
+      </button>
 
       <section className="auth-card-pro">
         <div className="auth-icon-badge">
           {page === 'register' ? <UserRound size={22} /> : <LockKeyhole size={22} />}
         </div>
-
-        <p className="auth-kicker">
-          {page === 'register' ? 'GET STARTED' : 'SECURE SIGN IN'}
-        </p>
 
         <h1 className="auth-heading">
           {page === 'register' ? 'Create owner account' : 'Welcome back to Forma'}
@@ -131,8 +118,8 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
 
         <p className="auth-subtitle">
           {page === 'register'
-            ? 'Enter your email and password to launch your gym workspace instantly.'
-            : 'Enter your credentials to return to your gym workspace.'}
+            ? 'Set up your gym with an email address and password.'
+            : 'Sign in to manage your gym.'}
         </p>
 
         <form onSubmit={submit} className="auth-form-pro">
@@ -178,7 +165,7 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
           )}
 
           <button className="button button-primary auth-submit-pro hero-btn-glow" disabled={busy}>
-            <span>{busy ? 'Authenticating…' : page === 'register' ? 'Launch Gym Workspace' : 'Sign In'}</span>
+            <span>{busy ? 'Working…' : page === 'register' ? 'Create workspace' : 'Sign In'}</span>
             <ArrowRight size={16} />
           </button>
         </form>
@@ -199,11 +186,7 @@ export default function AuthFlow({ onDone }: { onDone: (owner: OwnerDto, gym: Gy
 
       </section>
 
-      <footer className="auth-footer-pro">
-        <span>© 2026 Forma Technologies</span>
-        <span>•</span>
-        <span>Built for gym owners who value craft</span>
-      </footer>
+
     </main>
   )
 }

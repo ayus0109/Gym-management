@@ -116,7 +116,6 @@ export function App() {
   })
   const [active, setActive] = useState('Overview')
   const [previousTab, setPreviousTab] = useState<string | null>(null)
-  const [navHistory, setNavHistory] = useState<string[]>(['Overview'])
   const [members, setMembers] = useState<MemberView[]>([])
   const [memberDtos, setMemberDtos] = useState<MemberDto[]>([])
   const [plans, setPlans] = useState<PlanDto[]>([])
@@ -184,14 +183,6 @@ export function App() {
     }
     setActive(tab)
     setSidebarOpen(false)
-  }
-
-  const handleGoBack = () => {
-    if (previousTab && previousTab !== active) {
-      navigateTo(previousTab)
-    } else {
-      window.history.back()
-    }
   }
 
   useEffect(() => {
@@ -512,7 +503,7 @@ export function App() {
   const handleSaveMember = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (owner?.id === 'demo-owner') {
-      showToast('Demo Sandbox: Action simulated! (Contact Ayush for a private gym workspace)')
+      showToast('Demo preview. Create a workspace to save members.')
       setMemberModal(false)
       setEditingMember(null)
       return
@@ -557,7 +548,7 @@ export function App() {
   // Archive Member
   const handleArchiveMember = async (member: MemberView) => {
     if (owner?.id === 'demo-owner') {
-      showToast('Demo Sandbox: Action simulated!')
+      showToast('Demo preview. Sample members stay in the roster.')
       return
     }
 
@@ -575,7 +566,7 @@ export function App() {
   const handleRecordOfflinePayment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (owner?.id === 'demo-owner') {
-      showToast('Demo Sandbox: Offline payment recorded and receipt created!')
+      showToast('Demo preview. Create a workspace to record payments.')
       setOfflinePaymentModal(false)
       setOfflinePaymentPreselect(null)
       return
@@ -681,6 +672,7 @@ export function App() {
             return (
               <button
                 key={item.label}
+                aria-current={isCurrent ? 'page' : undefined}
                 type="button"
                 className={`nav-button ${isCurrent ? 'active' : ''}`}
                 onClick={() => navigateTo(item.label)}
@@ -836,16 +828,16 @@ export function App() {
 
         {/* ERROR / NOTICE TOASTS */}
         {error && (
-          <div className="error-banner">
+          <div className="error-banner" role="alert">
             <span>{error}</span>
-            <button type="button" onClick={() => setError('')}>
+            <button type="button" aria-label="Dismiss error" onClick={() => setError('')}>
               <X size={15} />
             </button>
           </div>
         )}
 
         {notice && (
-          <div className="toast">
+          <div className="toast" role="status">
             <CheckCheck size={18} />
             <span>{notice}</span>
           </div>

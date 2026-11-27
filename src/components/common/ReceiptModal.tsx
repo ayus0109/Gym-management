@@ -1,3 +1,4 @@
+import ModalBackdrop from './ModalBackdrop'
 import React, { useRef, useState } from 'react'
 import { Check, Copy, Download, MessageCircle, Printer, X } from 'lucide-react'
 import { money, shortDate, type GymDto, type PaymentDto } from '../../api'
@@ -65,7 +66,7 @@ Thank you for your payment.`
   }
 
   return (
-    <div className="modal-backdrop">
+    <ModalBackdrop label="Receipt" onClose={onClose}>
       <div className="modal-card receipt-modal">
         <div className="modal-header">
           <div>
@@ -157,7 +158,7 @@ Thank you for your payment.`
           </button>
         </div>
       </div>
-    </div>
+    </ModalBackdrop>
   )
 }
 

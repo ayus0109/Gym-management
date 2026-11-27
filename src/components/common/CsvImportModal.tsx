@@ -1,3 +1,4 @@
+import ModalBackdrop from './ModalBackdrop'
 import React, { useState } from 'react'
 import { AlertCircle, Check, Download, FileSpreadsheet, Upload, X } from 'lucide-react'
 import { api, type BulkImportMember, type PlanDto } from '../../api'
@@ -41,17 +42,47 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
 
   // Parse CSV
   const parseCsv = (text: string) => {
-    const lines = text
-      .split(/\r?\n/)
-      .map(l => l.trim())
-      .filter(Boolean)
+    const lines: string[][] = []
+    let row: string[] = []
+    let field = ''
+    let quoted = false
+    const finishRow = () => {
+      row.push(field.trim())
+      if (row.some(Boolean)) lines.push(row)
+      row = []
+      field = ''
+    }
+    for (let index = 0; index < text.length; index++) {
+      const char = text[index]
+      if (char === '"') {
+        if (quoted && text[index + 1] === '"') {
+          field += '"'
+          index++
+        } else {
+          quoted = !quoted
+        }
+      } else if (char === ',' && !quoted) {
+        row.push(field.trim())
+        field = ''
+      } else if (char === '\n' && !quoted) {
+        finishRow()
+      } else {
+        field += char
+      }
+    }
+    if (quoted) {
+      setParsingErrors(['A quoted field is missing its closing quotation mark.'])
+      setParsedRows([])
+      return
+    }
+    finishRow()
     if (lines.length < 2) {
       setParsingErrors(['CSV file must have a header row and at least 1 member record.'])
       setParsedRows([])
       return
     }
 
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
+    const headers = lines[0].map(h => h.trim().toLowerCase())
     const nameIdx = headers.findIndex(h => h.includes('name'))
     const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('mobile') || h.includes('contact'))
     const emailIdx = headers.findIndex(h => h.includes('email'))
@@ -70,9 +101,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
     const errs: string[] = []
 
     for (let i = 1; i < lines.length; i++) {
-      const line = lines[i]
-      // Split with quotes handling
-      const cols = line.split(',').map(c => c.trim().replace(/^["']|["']$/g, ''))
+      const cols = lines[i]
       const name = cols[nameIdx] || ''
       const phone = cols[phoneIdx] || ''
       const email = emailIdx !== -1 ? cols[emailIdx] : undefined
@@ -148,7 +177,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
   }
 
   return (
-    <div className="modal-backdrop">
+    <ModalBackdrop label="Import members" onClose={onClose}>
       <div className="modal-card csv-import-modal">
         <div className="modal-header">
           <div className="modal-header-icon-title">
@@ -156,7 +185,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
               <FileSpreadsheet size={20} />
             </div>
             <div>
-              <h3>Import Members from Excel / CSV</h3>
+              <h3>Import members from CSV</h3>
               <p>Easily onboard 100+ members from your existing spreadsheets</p>
             </div>
           </div>
@@ -191,7 +220,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
               {/* Template Download Row */}
               <div className="csv-template-notice">
                 <div>
-                  <strong>Need the Excel format?</strong>
+                  <strong>Need an example?</strong>
                   <span>Download our pre-formatted template with standard columns.</span>
                 </div>
                 <button
@@ -215,7 +244,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
                 <label htmlFor="csv-file-input" className="csv-dropzone-label">
                   <Upload size={28} className="upload-icon" />
                   <span>
-                    Click to browse your CSV file or drag & drop here
+                    Choose a CSV file
                   </span>
                   <small>Accepts .csv exported from Excel or Google Sheets</small>
                 </label>
@@ -289,7 +318,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </ModalBackdrop>
   )
 }
 

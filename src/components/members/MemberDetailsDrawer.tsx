@@ -1,3 +1,4 @@
+import ModalBackdrop from '../common/ModalBackdrop'
 import React from 'react'
 import { CheckCheck, Clock, CreditCard, MessageCircle, Phone, UserRound, X } from 'lucide-react'
 import { money, shortDate, type MemberDto, type PlanDto } from '../../api'
@@ -22,12 +23,7 @@ export const MemberDetailsDrawer: React.FC<MemberDetailsDrawerProps> = ({
   onClose,
 }) => {
   return (
-    <div
-      className="modal-backdrop"
-      onMouseDown={event => {
-        if (event.target === event.currentTarget) onClose()
-      }}
-    >
+    <ModalBackdrop label="Member details" onClose={onClose} dismissOutside>
       <section className="modal member-details">
         <div className="modal-head">
           <div>
@@ -99,7 +95,7 @@ export const MemberDetailsDrawer: React.FC<MemberDetailsDrawerProps> = ({
           <p className="no-history">No past memberships recorded for this member.</p>
         )}
       </section>
-    </div>
+    </ModalBackdrop>
   )
 }
 

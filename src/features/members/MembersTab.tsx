@@ -94,20 +94,19 @@ export const MembersTab: React.FC<MembersTabProps> = ({
     }
     const headers = ['Name', 'Phone', 'Email', 'Plan', 'StartDate', 'ExpiryDate', 'Status']
     const rows = members.map(m => [
-      `"${m.name.replace(/"/g, '""')}"`,
-      `"${m.phone}"`,
-      `"${m.email}"`,
-      `"${m.plan}"`,
-      `"${m.start}"`,
-      `"${m.expires}"`,
-      `"${m.status}"`,
+      m.name, m.phone, m.email, m.plan, m.start, m.expires, m.status,
     ])
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const quoteCell = (value: string) => {
+      const safe = /^[=+@-]/.test(value.trimStart()) || /^[\t\r\n]/.test(value) ? "'" + value : value
+      return '"' + safe.replace(/"/g, '""') + '"'
+    }
+    const csvContent = [headers.join(','), ...rows.map(row => row.map(quoteCell).join(','))].join('\r\n')
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
     link.download = `${gymName.replace(/\s+/g, '_')}_Members_${new Date().toISOString().slice(0, 10)}.csv`
     link.click()
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000)
     onToast(`Exported ${members.length} members to CSV!`)
   }
 
@@ -127,7 +126,7 @@ export const MembersTab: React.FC<MembersTabProps> = ({
             title="Import members from spreadsheet"
           >
             <FileSpreadsheet size={15} />
-            <span>Import Excel</span>
+            <span>Import CSV</span>
           </button>
           <button
             type="button"

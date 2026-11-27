@@ -1,5 +1,5 @@
+import ModalBackdrop from './ModalBackdrop'
 import React, { useEffect, useRef, useState } from 'react'
-import QRCode from 'qrcode'
 import { AlertTriangle, Check, Copy, Download, MessageCircle, Send, Sparkles, X, ExternalLink } from 'lucide-react'
 import {
   formatRenewalMessage,
@@ -35,7 +35,7 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
   const [customNote, setCustomNote] = useState('')
 
   const activeMembership = member.memberships[0]
-  const amountPaise = activeMembership?.amountPaise ?? 150000
+  const amountPaise = activeMembership?.amountPaise ?? 0
   const defaultAmountRupees = amountPaise / 100
 
   useEffect(() => {
@@ -43,14 +43,14 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
     setSelectedPlanName(activeMembership?.planNameSnapshot ?? 'Gym Membership')
   }, [member])
 
-  const effectiveAmount = customAmount > 0 ? customAmount : defaultAmountRupees
+  const effectiveAmount = Math.max(0, customAmount)
 
-  const upiUrl = generateUpiUrl({
-    upiId: upiId || 'gym@upi',
+  const upiUrl = effectiveAmount > 0 ? generateUpiUrl({
+    upiId,
     payeeName: gymName || 'Gym Front Desk',
     amountRupees: effectiveAmount,
     transactionNote: customNote || `${selectedPlanName} Renewal`,
-  })
+  }) : ''
 
   // Format date
   const expiryStr = activeMembership
@@ -75,24 +75,22 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
 
   // Render QR Code onto canvas
   useEffect(() => {
-    if (!canvasRef.current) return
-    const qrTarget = upiUrl || `upi://pay?pa=${upiId}&am=${effectiveAmount}`
-    QRCode.toCanvas(
-      canvasRef.current,
-      qrTarget,
-      {
+    const canvas = canvasRef.current
+    if (!canvas || !upiUrl) return
+    let active = true
+    void import('qrcode').then(({ default: QRCode }) => {
+      if (!active) return
+      return QRCode.toCanvas(canvas, upiUrl, {
         width: 200,
         margin: 2,
         color: {
           dark: '#000000',
           light: '#ffffff',
         },
-      },
-      err => {
-        if (err) console.error('QR rendering error', err)
-      }
-    )
-  }, [upiUrl, effectiveAmount, upiId])
+      })
+    }).catch(() => onToast('Could not generate the QR code.'))
+    return () => { active = false }
+  }, [upiUrl])
 
   // Copy QR Image to clipboard
   const handleCopyQrImage = async () => {
@@ -153,12 +151,12 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
   }
 
   return (
-    <div className="modal-backdrop">
+    <ModalBackdrop label="Renewal reminder" onClose={onClose}>
       <div className="modal-card upi-qr-modal">
         <div className="modal-header">
           <div>
             <h3>Send WhatsApp Renewal Reminder</h3>
-            <p>100% Free · No Meta API or GST needed</p>
+            <p>Review the amount and message before opening WhatsApp.</p>
           </div>
           <button className="icon-button" onClick={onClose} aria-label="Close modal">
             <X size={18} />
@@ -177,7 +175,7 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
               <span className="qr-member-label">RENEWAL AMOUNT (₹)</span>
               <input
                 type="number"
-                min="0"
+                aria-label="Renewal amount in rupees" step="0.01" min="0"
                 value={customAmount}
                 onChange={e => setCustomAmount(Number(e.target.value) || 0)}
                 className="input-inline-amount"
@@ -198,14 +196,14 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
           <div className="upi-qr-grid">
             <div className="qr-canvas-box">
               <div className="qr-frame">
-                <canvas ref={canvasRef} />
+                {upiUrl && <canvas ref={canvasRef} aria-label="Membership payment QR code" />}
               </div>
               <span className="qr-payee-tag">{upiId || 'No UPI ID Set'}</span>
               <div className="qr-action-buttons">
                 <button
                   type="button"
                   className="button button-secondary qr-btn"
-                  onClick={handleCopyQrImage}
+                  disabled={!upiUrl} onClick={handleCopyQrImage}
                 >
                   {copiedQr ? <Check size={14} /> : <Copy size={14} />}
                   <span>{copiedQr ? 'Copied QR!' : 'Copy QR'}</span>
@@ -213,7 +211,7 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
                 <button
                   type="button"
                   className="button button-secondary qr-btn"
-                  onClick={handleDownloadQr}
+                  disabled={!upiUrl} onClick={handleDownloadQr}
                 >
                   <Download size={14} />
                   <span>Save</span>
@@ -233,7 +231,7 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
                   {copiedText ? 'Copied' : 'Copy Text'}
                 </button>
               </div>
-              <textarea
+              <textarea aria-label="Renewal message preview"
                 readOnly
                 value={messageText}
                 className="qr-message-textarea"
@@ -262,7 +260,7 @@ export const UpiQrModal: React.FC<UpiQrModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalBackdrop>
   )
 }
 

@@ -114,7 +114,7 @@ export const RenewalsTab: React.FC<RenewalsTabProps> = ({
       {/* Page Header */}
       <div className="page-heading">
         <div>
-          <h2>Renewal Radar</h2>
+          <h2>Membership renewals</h2>
           <p>Upcoming and overdue memberships needing collection or reminders.</p>
         </div>
       </div>

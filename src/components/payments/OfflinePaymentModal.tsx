@@ -1,3 +1,4 @@
+import ModalBackdrop from '../common/ModalBackdrop'
 import React, { useState, type FormEvent } from 'react'
 import { Check, CreditCard, X } from 'lucide-react'
 import { money, type MemberDto } from '../../api'
@@ -32,19 +33,15 @@ export const OfflinePaymentModal: React.FC<OfflinePaymentModalProps> = ({
   const [selectedId, setSelectedId] = useState(defaultId)
   const currentDue = dues.find(item => item.membership.id === selectedId)
 
-  const defaultAmount = preselectedAmountPaise
+  const balance = currentDue?.membership.payments.find(payment => payment.status === 'PENDING')?.amountPaise
+  const defaultAmount = balance !== undefined ? balance / 100 : preselectedAmountPaise
     ? preselectedAmountPaise / 100
     : currentDue
     ? currentDue.membership.amountPaise / 100
-    : 1500
+    : undefined
 
   return (
-    <div
-      className="modal-backdrop"
-      onMouseDown={event => {
-        if (event.target === event.currentTarget) onClose()
-      }}
-    >
+    <ModalBackdrop label="Record payment" onClose={onClose} dismissOutside>
       <form className="modal" onSubmit={onSubmit}>
         <div className="modal-head">
           <div>
@@ -54,7 +51,7 @@ export const OfflinePaymentModal: React.FC<OfflinePaymentModalProps> = ({
             <h2>Record Offline Payment</h2>
             <p>Log direct cash, UPI transfer, or reception payments.</p>
           </div>
-          <button type="button" className="icon-button" onClick={onClose}>
+          <button type="button" aria-label="Close dialog" className="icon-button" onClick={onClose}>
             <X size={18} />
           </button>
         </div>
@@ -76,7 +73,7 @@ export const OfflinePaymentModal: React.FC<OfflinePaymentModalProps> = ({
             >
               {dues.map(item => (
                 <option value={item.membership.id} key={item.membership.id}>
-                  {item.member.name} — {item.membership.planNameSnapshot} ({money(item.membership.amountPaise)})
+                  {item.member.name} â€” {item.membership.planNameSnapshot} ({money(item.membership.amountPaise)})
                 </option>
               ))}
             </select>
@@ -90,7 +87,7 @@ export const OfflinePaymentModal: React.FC<OfflinePaymentModalProps> = ({
                 if (!ms) return null
                 return (
                   <option value={ms.id} key={ms.id}>
-                    {m.name} — {ms.planNameSnapshot} ({money(ms.amountPaise)})
+                    {m.name} â€” {ms.planNameSnapshot} ({money(ms.amountPaise)})
                   </option>
                 )
               })}
@@ -99,12 +96,13 @@ export const OfflinePaymentModal: React.FC<OfflinePaymentModalProps> = ({
         )}
 
         <label className="field-label">
-          <span>Amount Collected (₹ INR) *</span>
+          <span>Amount Collected (â‚¹ INR) *</span>
           <input
+            key={selectedId}
             name="amount"
             type="number"
-            min="1"
-            step="1"
+            min="0.01"
+            step="0.01"
             required
             defaultValue={defaultAmount}
           />
@@ -137,7 +135,7 @@ export const OfflinePaymentModal: React.FC<OfflinePaymentModalProps> = ({
           </button>
         </div>
       </form>
-    </div>
+    </ModalBackdrop>
   )
 }
 

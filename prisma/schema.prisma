@@ -195,6 +195,8 @@ model IntegrationSettings {
   razorpayWebhookEncrypted  String?
   whatsappTokenEncrypted   String?
   whatsappPhoneNumberId     String?
+  upiId                     String?
+  renewalTemplate           String?
   whatsappBusinessAccountId String?
   whatsappTemplateName      String?
   whatsappTemplateLanguage  String   @default("en")

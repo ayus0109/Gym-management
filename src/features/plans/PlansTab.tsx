@@ -1,3 +1,4 @@
+import ModalBackdrop from '../../components/common/ModalBackdrop'
 import React, { useState, type FormEvent } from 'react'
 import { Check, Edit2, FileText, Plus, Power, Trash2, X } from 'lucide-react'
 import { api, money, type PlanDto } from '../../api'
@@ -168,7 +169,7 @@ export const PlansTab: React.FC<PlansTabProps> = ({
 
       {/* Plan Add/Edit Modal */}
       {modalOpen && (
-        <div className="modal-backdrop">
+        <ModalBackdrop label="Membership plan" onClose={() => setModalOpen(false)}>
           <div className="modal-card">
             <div className="modal-header">
               <div>
@@ -249,7 +250,7 @@ export const PlansTab: React.FC<PlansTabProps> = ({
               </div>
             </form>
           </div>
-        </div>
+        </ModalBackdrop>
       )}
     </div>
   )
